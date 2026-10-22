@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>勤務の希望入力 | ShiftNest</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+:root{--bg:#EEF3F2;--surface:#fff;--surface-2:#F6F9F8;--ink:#14262A;--muted:#5A6D70;--line:#D6E0DF;--accent:#0E6B66;--accent-ink:#fff;--accent-soft:#DBEFEC;
+--ok:#1B7A4B;--ok-soft:#DDF2E5;--warn:#9A5B00;--warn-soft:#FFF0D6;--bad:#B3243A;--bad-soft:#FBE2E6;--star:#A86E00;--star-soft:#FFF3C9;--sun:#B3243A;--sat:#1E5EA6}
+@media (prefers-color-scheme:dark){:root{--bg:#0F1A1C;--surface:#172427;--surface-2:#1C2C2F;--ink:#E5EEEE;--muted:#93A6A8;--line:#2A3C3F;--accent:#4FC2B8;--accent-ink:#06211F;--accent-soft:#163A37;
+--ok:#5BD08E;--ok-soft:#163626;--warn:#F0B35A;--warn-soft:#3A2C12;--bad:#FF8495;--bad-soft:#3E1C22;--star:#FFD25E;--star-soft:#3A3010;--sun:#FF8495;--sat:#7FB2F0;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:-apple-system,"Hiragino Sans","BIZ UDPGothic","Meiryo",system-ui,sans-serif;font-size:16px;line-height:1.55;padding:calc(12px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+main{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:21px;margin:4px 0 0}
+.sub{color:var(--muted);font-size:14px;margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h2{font-size:16px;margin:0 0 10px}
+label.f{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=password],input[type=tel],select{font:inherit;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 16px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{flex:1;border:0;background:none;padding:8px;border-radius:9px;font-weight:700;color:var(--muted);font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.legend span{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 9px;background:var(--surface)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .wd{font-size:12px;text-align:center;color:var(--muted)}
+.cal .wd.su{color:var(--sun)}.cal .wd.sa{color:var(--sat)}
+.cal button{aspect-ratio:1/1.1;border:1px solid var(--line);background:var(--surface);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
+.cal button:active{transform:scale(.94)}
+.cal .dn{font-size:11px;color:var(--muted)} .cal .dn.su{color:var(--sun)} .cal .dn.sa{color:var(--sat)}
+.cal .mk{font-size:21px;font-weight:700;line-height:1.1}
+.m0{color:var(--ok)}.m1{color:var(--accent)}.m2{color:var(--warn)}.m3{color:var(--bad)}.m4{color:var(--star)}
+.cal button.v1{background:var(--accent-soft);border-color:transparent}.cal button.v2{background:var(--warn-soft);border-color:transparent}.cal button.v3{background:var(--bad-soft);border-color:transparent}.cal button.v4{background:var(--star-soft);border-color:transparent}
+.cal button.fx{background:var(--surface-2);border-style:dashed;cursor:default}
+.cal button.lv{background:var(--ok-soft);border:1.5px dashed var(--ok)}
+.cal .tag{font-size:10px;font-weight:700;color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:14px}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.lock{font-size:11px;font-weight:700;color:var(--ok);background:var(--ok-soft);border-radius:99px;padding:1px 8px}
+.note{font-size:13px;color:var(--muted)}
+.box{border-radius:12px;padding:10px 12px;font-size:14px}
+.box.ok{background:var(--ok-soft)}.box.star{background:var(--star-soft)}.box.warn{background:var(--warn-soft)}.box.info{background:var(--accent-soft)}
+.qr{background:#fff;border-radius:14px;padding:12px;display:flex;justify-content:center}
+.qr svg{width:100%;max-width:300px;height:auto}
+code.tok{display:block;font-size:11px;word-break:break-all;background:var(--surface-2);border-radius:8px;padding:8px;max-height:70px;overflow:auto}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:99px;font-size:14px;font-weight:700;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main id="app"><div class="card">読み込み中…</div></main>
+<div class="toast" id="toast"></div>
+<script src="../vendor/qrcode.js"></script>
+<script src="../common/holidays.js"></script>
+<script src="../common/codec.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const WD='日月火水木金土',MARK=['◯','△','▲','×','★'],MARK_TXT=['大丈夫','できれば勤務OK','できれば休み','絶対休み','優先休み'];
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2400);}
+function qrSvg(text){const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:4,margin:2,scalable:true});}
+const S={};
+function parseHash(){
+  const h=location.hash.slice(1),p=new URLSearchParams(h);
+  try{if(p.get('i')){S.kind='invite';S.inv=SNCodec.b64Json(p.get('i'));}
+      else if(p.get('q')){S.kind='req';S.inv=SNCodec.b64Json(p.get('q'));}}catch(e){S.kind='bad';}
+}
+const store={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+
+/* ---------- 招待：希望入力 ---------- */
+function setupInvite(){
+  const inv=S.inv,[y,m]=inv.ym.split('-').map(Number);
+  S.days=monthDays(y,m-1,!!inv.ye);
+  const draft=store.get('sn-draft-'+inv.ym+'-'+inv.w)||{};
+  S.step=draft.step&&draft.step!=='done'?draft.step:'who';
+  S.id=draft.id||0;S.name=draft.name||'';S.p=draft.p||new Array(S.days.length).fill(0);
+  S.lv=draft.lv||[];S.ng=draft.ng||[];S.mode='pref';S.pin='';
+}
+function saveDraft(){store.set('sn-draft-'+S.inv.ym+'-'+S.inv.w,{step:S.step,id:S.id,name:S.name,p:S.p,lv:S.lv,ng:S.ng});}
+function fixedDays(){return new Set(((S.inv.fx||{})[S.id]||[]).map(Number));}
+function hasStar(){return (S.inv.cr||[]).includes(S.id);}
+function renderInvite(){
+  const inv=S.inv,[,mm]=inv.ym.split('-').map(Number),app=$('#app');
+  const head=`<div><h1>${mm}月の勤務の希望</h1><p class="sub">${esc(inv.w)}・締切 ${esc(inv.dl||'')}</p></div>`;
+  if(S.step==='who'){
+    app.innerHTML=head+`<div class="card"><h2>1. あなたの名前</h2>
+      <label class="f" for="who">名簿から選ぶ</label>
+      <select id="who"><option value="">選んでください</option>${(inv.s||[]).map(([id,n])=>`<option value="${id}" ${id===S.id?'selected':''}>${esc(n)}</option>`).join('')}<option value="new" ${S.id===0&&S.name?'selected':''}>名簿にない（新しく登録）</option></select>
+      <div id="newBox" ${S.id===0&&S.name?'':'hidden'}><label class="f" for="nm">勤務表に載せる名前（苗字やニックネーム）</label><input type="text" id="nm" maxlength="10" value="${esc(S.id?'':S.name)}"></div>
+      <label class="f" for="pin">合言葉（数字4けた・自分で決める）</label>
+      <input type="tel" id="pin" inputmode="numeric" maxlength="4" placeholder="例：2580" autocomplete="off">
+      <p class="note">合言葉は、あとで師長から「お願い」が届いたときに、あなただけが読むために使います。どこにも送られません。</p>
+      <button class="btn primary block" id="next1">次へ</button></div>`;
+    $('#who').onchange=e=>{$('#newBox').hidden=e.target.value!=='new';};
+    $('#next1').onclick=()=>{const v=$('#who').value;const pin=$('#pin').value.trim();
+      if(!v){toast('名前を選んでください');return;}
+      if(v==='new'){const n=$('#nm').value.trim();if(!n){toast('名前を入れてください');return;}S.id=0;S.name=n;}
+      else{S.id=+v;S.name=(inv.s.find(x=>x[0]===S.id)||[0,''])[1];}
+      if(!/^\d{4}$/.test(pin)){toast('合言葉は数字4けたです');return;}
+      S.pin=pin;S.step='cal';saveDraft();render();window.scrollTo(0,0);};
+    return;
+  }
+  if(S.step==='cal'){
+    const fx=fixedDays(),lead=S.days[0].dow,star=hasStar();
+    app.innerHTML=head+`<div class="card"><h2>2. だめな日だけタップ（${esc(S.name)}さん）</h2>
+      <div class="seg"><button data-mode="pref" aria-pressed="${S.mode==='pref'}">希望（◯△×）</button><button data-mode="leave" aria-pressed="${S.mode==='leave'}">有休を申請</button></div>
+      ${star?'<div class="box star" style="margin-top:10px"><b style="color:var(--star)">★ 先月はお願いに協力してくれてありがとう</b><br>今月は「優先休み」を1日使えます（× の次にもう1回タップ）。</div>':''}
+      ${S.mode==='leave'?'<div class="box ok" style="margin-top:10px">休みたい日をタップ。師長が承認すると「有給」になります（週休とは別）。</div>':`<div class="legend">${MARK.slice(0,star?5:4).map((k,i)=>`<span><b class="m${i}">${k}</b> ${MARK_TXT[i]}</span>`).join('')}</div>`}
+      <div class="cal" style="margin-top:10px">${[...WD].map((w,i)=>`<div class="wd ${i===0?'su':i===6?'sa':''}">${w}</div>`).join('')}${'<div></div>'.repeat(lead)}
+      ${S.days.map((d,i)=>{const dn=`<span class="dn ${d.dow===0||d.name?'su':d.dow===6?'sa':''}">${d.day}</span>`;
+        if(fx.has(d.day))return `<button class="fx" disabled>${dn}<span class="tag">有給</span></button>`;
+        if(S.lv.includes(d.day))return `<button class="lv" data-d="${i}">${dn}<span class="tag">申請</span></button>`;
+        const q=S.p[i];return `<button class="v${q}" data-d="${i}" aria-label="${d.day}日 ${MARK_TXT[q]}">${dn}<span class="mk m${q}">${MARK[q]}</span></button>`;}).join('')}</div>
+      </div>
+      <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">師長にも見えません</span> アプリの中だけで使います。</p>
+      <div class="chips">${(inv.s||[]).filter(([id])=>id!==S.id).map(([id,n])=>`<button data-ng="${id}" aria-pressed="${S.ng.includes(id)}">${esc(n)}</button>`).join('')}</div></div>
+      <button class="btn primary block" id="send">師長に送る</button>
+      <button class="btn block" id="back">名前・合言葉からやり直す</button>`;
+    app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render();});
+    app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=+b.dataset.d,day=S.days[i].day;
+      if(S.mode==='leave'){const k=S.lv.indexOf(day);if(k>=0)S.lv.splice(k,1);else S.lv.push(day);}
+      else if(S.lv.includes(day))return;
+      else{let nv=(S.p[i]+1)%(star?5:4);if(nv===4&&S.p.some((q,j)=>q===4&&j!==i))nv=0;S.p[i]=nv;}
+      saveDraft();render();});
+    app.querySelectorAll('[data-ng]').forEach(b=>b.onclick=()=>{const id=+b.dataset.ng,k=S.ng.indexOf(id);if(k>=0)S.ng.splice(k,1);else{if(S.ng.length>=2){toast('2人までです');return;}S.ng.push(id);}saveDraft();render();});
+    $('#back').onclick=()=>{S.step='who';render();};
+    $('#send').onclick=async()=>{
+      if(!S.pin){S.step='who';render();toast('合言葉をもう一度入れてください');return;}
+      $('#send').disabled=true;$('#send').textContent='暗号化しています…';
+      try{const rk=SNCodec.b64u.enc(await SNCodec.reqKey(S.pin,S.name));
+        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk});
+        S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='師長に送る';}};
+    return;
+  }
+  if(S.step==='done')renderSend(head,'回答ができました','もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
+}
+function renderSend(head,title,foot,onBack){
+  const tok=S.token,link='shiftnest://a?d='+tok;
+  $('#app').innerHTML=head+`<div class="card"><h2>${title}</h2>
+    <p class="note" style="margin:0 0 10px">次のどれかで師長に渡してください。中身は暗号化されていて、師長のアプリでしか開けません。</p>
+    <div class="box info"><b>A. 師長に画面を見せる</b>（いちばん確実）<br>師長がアプリでこのQRコードを読み取ります。</div>
+    <div class="qr" style="margin:10px 0">${qrSvg(tok)}</div>
+    <div class="box info"><b>B. メール・メッセージで送る</b></div>
+    <div class="row" style="margin:8px 0 12px"><button class="btn" id="share">送る（メール・LINEなど）</button><button class="btn" id="copy">コピー</button></div>
+    <code class="tok" id="tok">${esc(tok)}</code>
+    <p class="note">${foot}</p>
+    ${onBack?'<button class="btn block" id="again">直す</button>':''}</div>`;
+  const text='ShiftNestの回答です。師長のアプリで受け取ってください。\n'+link+'\n\n（開けないときは次の文字をアプリに貼り付け）\n'+tok;
+  $('#share').onclick=async()=>{if(navigator.share){try{await navigator.share({text});}catch(e){}}else{location.href='mailto:?subject='+encodeURIComponent('勤務の希望（ShiftNest）')+'&body='+encodeURIComponent(text);}};
+  $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(text);toast('コピーしました');}catch(e){const r=document.createRange();r.selectNodeContents($('#tok'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('選択しました。コピーしてください');}};
+  if(onBack)$('#again').onclick=onBack;
+}
+
+/* ---------- お願いリンク ---------- */
+function renderReq(){
+  const inv=S.inv,[,mm]=inv.ym.split('-').map(Number),app=$('#app');
+  const head=`<div><h1>${mm}月の勤務表についてのお願い</h1><p class="sub">名前を選んで合言葉を入れてください。あなたへのお願いがあるときだけ表示されます。</p></div>`;
+  if(!S.reqStep){
+    app.innerHTML=head+`<div class="card"><label class="f" for="who">あなたの名前</label><select id="who"><option value="">選んでください</option>${(inv.s||[]).map(([id,n])=>`<option value="${id}">${esc(n)}</option>`).join('')}</select>
+      <label class="f" for="pin">合言葉（数字4けた）</label><input type="tel" id="pin" inputmode="numeric" maxlength="4" autocomplete="off">
+      <button class="btn primary block" id="open" style="margin-top:12px">開く</button></div>`;
+    $('#open').onclick=async()=>{const id=+$('#who').value,pin=$('#pin').value.trim();if(!id||!/^\d{4}$/.test(pin)){toast('名前と合言葉を入れてください');return;}
+      const name=inv.s.find(x=>x[0]===id)[1],item=(inv.items||{})[id];S.id=id;S.name=name;
+      if(!item){S.reqStep='none';render();return;}
+      try{const key=await SNCodec.reqKey(pin,name);S.req=await SNCodec.openReq(key,item);S.reqStep='ask';render();}
+      catch(e){toast('合言葉が違うようです');}};
+    return;
+  }
+  if(S.reqStep==='none'){app.innerHTML=head+`<div class="card"><h2>今回はお願いはありません</h2><p class="note">${esc(S.name)}さん、ありがとうございました。</p></div>`;return;}
+  if(S.reqStep==='ask'){
+    app.innerHTML=head+`<div class="card"><h2>${esc(S.name)}さんへ</h2><p style="font-size:17px">${esc(S.req.msg)}</p><p class="note">ほかの日の希望は変わりません。むりなら断って大丈夫です（理由は聞きません）。</p>
+      <div class="row"><button class="btn primary" id="yes" style="flex:1">入れる</button><button class="btn" id="no" style="flex:1">むり</button></div></div>`;
+    const answer=async ok=>{S.token=await SNCodec.sealToPub(inv.k,{t:'req-ok',ym:inv.ym,id:S.id,d:S.req.d,ok});
+      if(!ok){app.innerHTML=head+'<div class="card"><h2>わかりました</h2><p class="note">返事は送らなくて大丈夫です。</p></div>';return;}
+      renderSend(head,'ありがとうございます','師長がアプリで受け取ると、勤務表が作り直されます。何人かがOKした場合は、アプリが1人を選びます。',null);};
+    $('#yes').onclick=()=>answer(true);$('#no').onclick=()=>answer(false);
+  }
+}
+function render(){
+  if(S.kind==='invite')return renderInvite();
+  if(S.kind==='req')return renderReq();
+  $('#app').innerHTML=`<div class="card"><h1>ShiftNest</h1><p>病棟に貼ってある招待QRコードから開いてください。</p><p class="note">このページは看護師の勤務の希望を入力するためのものです。</p></div>`;
+}
+parseHash();if(S.kind==='invite')setupInvite();render();
+window.addEventListener('hashchange',()=>{parseHash();if(S.kind==='invite')setupInvite();S.reqStep=null;render();});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('../sw.js').catch(()=>{});
+</script>
+</body>
+</html>

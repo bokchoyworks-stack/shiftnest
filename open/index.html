@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
+<title>ShiftNest で開く</title>
+<style>
+:root{--bg:#EEF3F2;--surface:#fff;--ink:#14262A;--muted:#5A6D70;--line:#D6E0DF;--accent:#0E6B66}
+@media (prefers-color-scheme:dark){:root{--bg:#0F1A1C;--surface:#172427;--ink:#E5EEEE;--muted:#93A6A8;--line:#2A3C3F;--accent:#4FC2B8;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Hiragino Sans","Meiryo",sans-serif;line-height:1.6;padding:32px max(16px,env(safe-area-inset-left))}
+.card{max-width:460px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+a.btn{display:block;text-align:center;background:var(--accent);color:#fff;border-radius:12px;padding:14px;font-weight:700;text-decoration:none;margin:14px 0}
+.note{font-size:13px;color:var(--muted)}
+</style></head><body>
+<div class="card">
+  <h1 style="font-size:20px;margin:0 0 6px">ShiftNest のデータ</h1>
+  <p id="msg">パソコンで直した勤務表のデータです。iPhoneのShiftNestアプリで開いてください。</p>
+  <a class="btn" id="go" href="#">ShiftNest アプリで開く</a>
+  <p class="note">開いたら、パソコンの画面に出ていた6桁の番号を入れます。中身は鍵付きで、番号がないと開けません。<br>このページはデータを保存しません。</p>
+</div>
+<script>
+const h=new URLSearchParams(location.hash.slice(1)).get('d');
+if(!h){document.getElementById('msg').textContent='リンクが途中で切れているようです。もう一度送ってもらってください。';document.getElementById('go').style.display='none';}
+else{const url='shiftnest://import?d='+h;document.getElementById('go').href=url;}
+</script></body></html>
