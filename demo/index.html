@@ -89,7 +89,14 @@ section.view[hidden]{display:none}
 .sched{border-collapse:collapse;font-size:11px;margin:0 auto}
 .sched td,.sched th{border:1px solid var(--line);padding:2px 3px;text-align:center;min-width:20px}
 .sched th{background:var(--surface-2);font-weight:700}
-.s1{background:transparent}.s2{background:#FFE2C0;color:#14262A}.s3{background:#2C3874;color:#fff}.s0{color:var(--ios-sub)}
+.s1{background:transparent}.s2{background:#FFE2C0;color:#14262A}.s3{background:#2C3874;color:#fff}.s0{color:var(--ios-sub)}.s6{background:#DDF2E5;color:#1B7A4B}
+.sched th.nm{position:sticky;left:0;background:var(--ios-cell);text-align:left;white-space:nowrap;z-index:1;font-size:11px}
+.sched .gc{font-size:9px;font-weight:700;color:var(--accent);margin-right:3px}
+.sched th small{font-weight:400;font-size:9px}.sched th.sat{color:var(--sat)}.sched th.hol{color:var(--bad)}.sched td.hd{background:rgba(179,36,58,.06)}
+.sched td.st{font-weight:700;background:var(--surface-2)}.sched tr.cnt td,.sched tr.cnt th{background:var(--surface-2);font-weight:700;font-size:10px}
+.bigtbl{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.bigin{background:var(--surface);color:var(--ink);border-radius:16px;padding:16px;max-width:1200px;width:100%}
+.bigin .sched{font-size:12px}.bigin .sched td,.bigin .sched th{min-width:26px;padding:3px}
 /* alert */
 .alert-bg{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:5}
 .alert-bg[hidden]{display:none}
@@ -252,7 +259,7 @@ function render(){
     if(ph==='built'||ph==='confirmed')act=`<button class="bigbtn" id="pdf">⇪ メール・LINEで送る（PDF）→</button><button class="ibtn" style="width:100%;margin-top:8px;padding:10px" id="make">↻ 希望を入れ直して作り直す</button>`;
     if(ph==='cannot')act=`<button class="bigbtn" style="background:#B7791F" id="adjust">✈︎ 都合をつけてもらえるか、まとめてお願いする →</button><div class="cap" style="margin-top:6px">候補の人にだけお願いが表示されます。名前は管理者にも表示しません。</div>`;
     if(ph==='asking')act=(M.replies?`<button class="bigbtn" id="remake">✦ OKの返事で勤務表を作り直す →</button>`:`<button class="bigbtn" style="opacity:.5" id="gotReply">（見本）返事が届いたことにする</button>`)+`<button class="ibtn" style="width:100%;margin-top:8px;padding:10px" id="adjust">✈︎ お願いをもう一度送る</button>`;
-    const alt=['希望休 100%・業務 3/3・日勤・夜勤の希望 9/11・できれば休み 92%','希望休 100%・業務 3/3・日勤・夜勤の希望 8/11・できれば休み 88%','希望休 100%・業務 3/3・日勤・夜勤の希望 7/11・できれば休み 90%'];
+    const alt=DEMO.alts.map(a=>a.sum);
     h=`<div class="nav"><h4>ShiftNest</h4></div>
     <div class="grp"><div class="cells" style="padding:16px">
       <div class="cap">今日 ${(()=>{const d=new Date();return (d.getMonth()+1)+'月'+d.getDate()+'日（'+'日月火水木金土'[d.getDay()]+'）';})()}</div>
@@ -271,12 +278,12 @@ function render(){
       <div class="cell" style="padding-left:0"><span class="ico">⚙︎</span><span class="grow">細かい設定（人数・区分・ルール）</span><span class="chev">›</span></div>
     </div></div>
     ${ph==='built'||ph==='confirmed'?`<div class="ghead">案を選ぶ（希望が多く通った順）</div><div class="grp"><div class="cells" style="padding:10px">
-      <div style="display:flex;background:rgba(120,120,128,.14);border-radius:9px;padding:2px">${[0,1,2].map(i=>`<button data-alt="${i}" style="flex:1;border:0;border-radius:7px;padding:6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;${M.alt===i?'background:var(--ios-cell);box-shadow:0 1px 3px rgba(0,0,0,.15)':'background:transparent;color:var(--ink)'}">案${i+1}</button>`).join('')}</div>
+      <div style="display:flex;background:rgba(120,120,128,.14);border-radius:9px;padding:2px">${DEMO.alts.map((_,i)=>i).map(i=>`<button data-alt="${i}" style="flex:1;border:0;border-radius:7px;padding:6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;${M.alt===i?'background:var(--ios-cell);box-shadow:0 1px 3px rgba(0,0,0,.15)':'background:transparent;color:var(--ink)'}">案${i+1}</button>`).join('')}</div>
       <div class="cap" style="margin:8px 2px">${alt[M.alt]}</div>
-      <div class="cap" style="margin:0 2px 4px">27人全員分の表です（見本では一部だけ表示）</div><div style="overflow-x:auto">${miniTable()}</div><div class="cap" style="margin:4px 2px 0">… ほか22人</div>
+      <div class="cap" style="margin:0 2px 4px">27人全員・31日分（横にスクロールできます）</div><div style="overflow:auto;max-height:420px">${miniTable()}</div><button class="ibtn" style="width:100%;margin-top:8px;padding:9px" id="big">⤢ 表を大きく見る</button>
       ${ph==='built'?`<button class="ibtn fill" style="width:100%;margin-top:10px;padding:10px" id="confirm">✓ この案で確定して保存</button>`:'<div class="cap" style="margin-top:8px;color:var(--ok);font-weight:700">✓ 確定済み（翌月に引き継ぎます）</div>'}
     </div></div>
-    <div class="kpis" style="margin-top:8px"><div class="kpi ok"><b>100%</b><span>× 希望休</span></div><div class="kpi ok"><b>3/3</b><span>業務がある日</span></div><div class="kpi"><b>${[9,8,7][M.alt]}/11</b><span>日勤・夜勤の希望</span></div><div class="kpi"><b>68.5h</b><span>月平均夜勤（72h以内）</span></div></div>`:''}
+    <div class="kpis" style="margin-top:8px"><div class="kpi ok"><b>100%</b><span>× 希望休</span></div><div class="kpi ok"><b>3/3</b><span>業務がある日</span></div><div class="kpi"><b>${(DEMO.alts[M.alt]||DEMO.alts[0]).want[0]}/${(DEMO.alts[M.alt]||DEMO.alts[0]).want[1]}</b><span>日勤・夜勤の希望</span></div><div class="kpi"><b>${(DEMO.alts[M.alt]||DEMO.alts[0]).avgH}h</b><span>月平均夜勤（72h以内）</span></div></div>`:''}
     <div style="height:20px"></div>`;
   }
   if(s==='invite'){
@@ -334,11 +341,15 @@ function render(){
   }
   el.innerHTML=h;el.scrollTop=0;bind();
 }
+const DEMO={"days": [[1, 2, 0], [2, 3, 0], [3, 4, 0], [4, 5, 0], [5, 6, 1], [6, 0, 1], [7, 1, 0], [8, 2, 0], [9, 3, 0], [10, 4, 0], [11, 5, 0], [12, 6, 1], [13, 0, 1], [14, 1, 0], [15, 2, 0], [16, 3, 0], [17, 4, 0], [18, 5, 0], [19, 6, 1], [20, 0, 1], [21, 1, 0], [22, 2, 0], [23, 3, 0], [24, 4, 0], [25, 5, 0], [26, 6, 1], [27, 0, 1], [28, 1, 0], [29, 2, 1], [30, 3, 1], [31, 4, 1]], "names": ["佐藤", "鈴木", "高橋", "田中", "伊藤", "渡辺", "山本", "中村", "小林", "加藤", "吉田", "山田", "佐々木", "山口", "松本", "井上", "木村", "林", "斎藤", "清水", "山崎", "森", "池田", "橋本", "阿部", "石川", "石田"], "codes": ["A1", "A1", "A1", "A2", "A2", "A2", "A3", "A3", "A3", "B1", "B1", "B1", "B1", "B2", "B2", "B2", "B2", "B2", "B2", "C", "C", "C", "C", "C", "C", "C", "C"], "alts": [{"rows": ["0030101130030303200010200130010", "1100202011110132011301032001030", "3003200100120101320120011301200", "0102013020201102013002013020001", "2011000110113201200113020020020", "0201020101130120302030300000300", "0320000202011111000201001032003", "1111303003002011030130201001320", "0111030300300100020120111203012", "3030001002020320111000106012030", "0320101320100013001201120102030", "2011020112000001303011032010103", "1132030130200300201013013000111", "0113020320010030100112013201001", "3001112011101013030302002001002", "1101101110101100110001111101110", "1000000030302032011200100103200", "0101011111000011110100001010101", "2011302003000100113001320003011", "1200301011203011110030300030203", "0112001201103200012011110320300", "1011111010001110111011111001100", "1010113203030020100303201301000", "1203201011112011120020130200002", "1320030101320200032010111010020", "0110000011110011100011100111110", "0000011101001111000011011111001"], "sum": "希望休 100%・業務 1/1・日勤・夜勤の希望 13/14・できれば休み 100%・夜勤 8〜9回", "want": [13, 14], "avgH": 67.6, "hard": 0}, {"rows": ["3201011120102011200011013012030", "1303200301301110301100020003030", "0010300201130202003201101302000", "0000203011200013012002002030102", "2001011101320111200132013020020", "1301020011000130320303030200101", "0032032011013013010011012020300", "1120032013030111101000301003203", "1111011132010320130020200011201", "0011020130000320110301126103002", "3203001010101030110301020032011", "1110130132000101302030201100030", "0111020110200320001103200201300", "1113013020120001200013030301110", "2002001020103002030130130101011", "0101100100101001011010011001101", "3000300300102000101201302001020", "0101010001100100110010101110101", "2020101013200103013201111300010", "1200202013012032020010113010100", "0032001302010201132020010111020", "1011101000001100111000111101010", "0030303200030111100011101201303", "0320101111303010003020301030002", "1110100201120201020012011020203", "0110011101111011110111110000010", "1111000110011110010111100011000"], "sum": "希望休 100%・業務 1/1・日勤・夜勤の希望 13/14・できれば休み 100%・夜勤 8〜9回", "want": [13, 14], "avgH": 67.6, "hard": 0}, {"rows": ["3201201100201101200111120020200", "1301110111303030010320301202000", "3030000130110202011010120300030", "0003011113003011132003013030003", "0010002020020020201102030012020", "2001300301110101120202030100003", "0001030110130111303020012013002", "0320113201101320030320101000100", "0102020012002013010130203001301", "1032013013010110320000116320000", "1111201020302030113001110003030", "0300320301300103000011201200013", "1113032020200111001201301101200", "3200301130100100300012020301112", "1100002011102012030113201011320", "1101000010001001100110111100110", "1120030101201032011201103002020", "0111010100101011100000000101101", "2020101012030300113030300201001", "1200103030020120002010132001130", "0030101102030201200013010130200", "0011101010100110101011011011101", "1012001203013200110301012003011", "1113201201010013020130010030300", "2011020301020300112001101020002", "0110011011101011110001101111010", "0111000101110101011011011011011"], "sum": "希望休 100%・業務 1/1・日勤・夜勤の希望 13/14・できれば休み 100%・夜勤 8〜9回", "want": [13, 14], "avgH": 67.6, "hard": 0}]};
 function miniTable(){
-  const L=['休','日','準','深'],rows=[['佐藤','1102310021'],['鈴木','2310011023'],['田中','0123101102'],['山本','1011023101'],['清水','3101102310']];
-  let t='<table class="sched"><tr><th></th>'+[...'1234567890'].map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
-  rows.forEach(([n,p])=>{t+=`<tr><th>${n}</th>`+[...p].map(c=>`<td class="s${c}">${L[+c]}</td>`).join('')+'</tr>';});return t+'</table>';
+  const A=DEMO.alts[M.alt]||DEMO.alts[0],L={0:'休',1:'日',2:'準',3:'深',6:'有'},WDN='日月火水木金土';
+  let t='<table class="sched"><tr><th class="nm">名前</th>'+DEMO.days.map(([d,w,h])=>`<th class="${h&&w!==6?'hol':w===6?'sat':''}">${d}<br><small>${h&&w!==6&&w!==0?'祝':WDN[w]}</small></th>`).join('')+'<th>休</th><th>夜</th></tr>';
+  A.rows.forEach((row,n)=>{const r=[...row];t+=`<tr><th class="nm"><span class="gc">${DEMO.codes[n]}</span>${DEMO.names[n]}</th>`+r.map((c,d)=>`<td class="s${c}${c==='0'&&DEMO.days[d][2]?' hd':''}">${L[c]||''}</td>`).join('')+`<td class="st">${r.filter(c=>c==='0').length}</td><td class="st">${r.filter(c=>c==='2'||c==='3').length}</td></tr>`;});
+  [['1','日勤'],['2','準夜'],['3','深夜']].forEach(([c,lb])=>{t+=`<tr class="cnt"><th class="nm">${lb}の人数</th>`+DEMO.days.map((_,d)=>`<td>${A.rows.filter(r=>r[d]===c).length}</td>`).join('')+'<td></td><td></td></tr>';});
+  return t+'</table>';
 }
+function showBig(){const o=document.createElement('div');o.className='bigtbl';o.innerHTML=`<div class="bigin"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="font-size:17px">2026年12月の勤務表（案${M.alt+1}・27人全員）</b><span class="note">${(DEMO.alts[M.alt]||DEMO.alts[0]).sum}</span><button class="btn" style="margin-left:auto" id="bigClose">閉じる</button></div><div style="overflow:auto;max-height:78vh">${miniTable()}</div><p class="note">休・夜＝その月の休みの日数と夜勤（準夜＋深夜）の回数。下の3行は毎日の人数（日勤10・準夜3・深夜3、土日祝は日勤6）。</p></div>`;document.body.appendChild(o);o.onclick=e=>{if(e.target===o||e.target.id==='bigClose')o.remove();};}
 function bind(){
   document.querySelectorAll('[data-ph]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ph===M.phase));
   document.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>{M.phase=b.dataset.ph;if(M.phase==='asking')M.replies=0;render();});
@@ -350,6 +361,7 @@ function bind(){
   const rmk=$('#remake');if(rmk)rmk.onclick=()=>{rmk.textContent='作り直しています…';setTimeout(()=>go('built','OKの返事で作り直しました'),900);};
   const cf=$('#confirm');if(cf)cf.onclick=()=>go('confirmed','確定して保存しました');
   const pd=$('#pdf');if(pd)pd.onclick=()=>toast('（見本）メール・LINEの送り先を選ぶ画面が開きます');
+  {const bg=$('#big');if(bg)bg.onclick=showBig;}
   document.querySelectorAll('[data-alt]').forEach(b=>b.onclick=()=>{M.alt=+b.dataset.alt;render();});
   const p=$('#pass');if(p)p.oninput=e=>{M.pass=e.target.value;};
   const a=$('#auto');if(a)a.onclick=()=>{M.auto=!M.auto;render();};
