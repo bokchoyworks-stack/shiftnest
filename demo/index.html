@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>ShiftNest 画面見本</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+:root{--bg:#EEF3F2;--surface:#fff;--surface-2:#F6F9F8;--ink:#14262A;--muted:#5A6D70;--line:#D6E0DF;--accent:#0E6B66;--accent-ink:#fff;--accent-soft:#DBEFEC;
+--ok:#1B7A4B;--ok-soft:#DDF2E5;--warn:#9A5B00;--warn-soft:#FFF0D6;--bad:#B3243A;--bad-soft:#FBE2E6;--sat:#1E5EA6;
+--ios-bg:#F2F2F7;--ios-cell:#fff;--ios-sep:#C6C6C8;--ios-sub:#6C6C70;--ios-blue:#0E6B66;
+--f-body:"BIZ UDPGothic",-apple-system,"Hiragino Sans","Meiryo",system-ui,sans-serif;--f-display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","BIZ UDPGothic",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1A1C;--surface:#172427;--surface-2:#1C2C2F;--ink:#E5EEEE;--muted:#93A6A8;--line:#2A3C3F;--accent:#4FC2B8;--accent-ink:#06211F;--accent-soft:#163A37;
+--ok:#5BD08E;--ok-soft:#163626;--warn:#F0B35A;--warn-soft:#3A2C12;--bad:#FF8495;--bad-soft:#3E1C22;--sat:#7FB2F0;
+--ios-bg:#000;--ios-cell:#1C1C1E;--ios-sep:#38383A;--ios-sub:#8E8E93;--ios-blue:#4FC2B8}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);line-height:1.6;padding:0 16px 48px}
+header{max-width:1100px;margin:0 auto;padding:28px 0 8px}
+h1{font-family:var(--f-display);font-size:26px;margin:0}
+.lead{color:var(--muted);margin:4px 0 0;font-size:14px}
+.tabs{max-width:1100px;margin:16px auto 0;display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:9px 16px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+section.view{max-width:1100px;margin:18px auto 0}
+section.view[hidden]{display:none}
+.row{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+.explain{flex:1;min-width:260px;max-width:460px}
+.explain h2{font-family:var(--f-display);font-size:20px;margin:0 0 6px}
+.explain p,.explain li{font-size:14px}
+.explain ol{padding-left:20px;margin:6px 0}
+.key{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:8px;padding:1px 10px;font-size:15px}
+.note{color:var(--muted);font-size:13px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.btn{font:inherit;font-weight:700;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 14px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+/* phone frame */
+.phone{width:min(375px,100%);height:740px;border-radius:44px;background:#111;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.18);flex:none}
+.phone .scr{width:100%;height:100%;border-radius:34px;overflow:hidden;background:var(--ios-bg);position:relative;display:flex;flex-direction:column}
+.phone iframe{border:0;width:100%;height:100%;background:var(--bg)}
+.notch{height:30px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:12px;font-weight:700;color:var(--ink)}
+/* iOS mock */
+.ios{flex:1;overflow-y:auto;font-family:-apple-system,"Hiragino Sans",var(--f-body);color:var(--ink);font-size:15px}
+.nav{padding:4px 16px 8px}
+.nav .back{color:var(--ios-blue);font-size:15px}
+.nav h3{font-size:26px;margin:2px 0 0;font-weight:800}
+.nav h4{font-size:16px;margin:4px 0 0;text-align:center;font-weight:700}
+.grp{margin:0 16px 4px}
+.ghead{font-size:12px;color:var(--ios-sub);margin:16px 16px 6px;text-transform:none}
+.gfoot{font-size:12px;color:var(--ios-sub);margin:6px 16px 10px;line-height:1.45}
+.cells{background:var(--ios-cell);border-radius:12px;overflow:hidden}
+.cell{padding:11px 14px;border-bottom:.5px solid var(--ios-sep);display:flex;align-items:center;gap:10px;min-height:44px}
+.cell:last-child{border-bottom:0}
+.cell .grow{flex:1;min-width:0}
+.cell .sub{color:var(--ios-sub);font-size:13px}
+.cell .val{color:var(--ios-sub)}
+.cell.link{color:var(--ios-blue);cursor:pointer}
+.cell.link.bold{font-weight:700}
+.cell.dis{opacity:.4}
+.ico{width:22px;text-align:center;flex:none}
+.chev{color:var(--ios-sub);font-size:13px}
+.tf{background:transparent;border:0;font:inherit;color:var(--ink);width:100%;outline:none}
+.sw{width:50px;height:30px;border-radius:99px;background:#34C759;position:relative;flex:none;cursor:pointer}
+.sw::after{content:"";position:absolute;right:2px;top:2px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:right .15s}
+.sw.off{background:#C7C7CC}.sw.off::after{right:22px}
+.cap{font-size:12px;color:var(--ios-sub)}
+.pill{font-size:11px;font-weight:700;border-radius:99px;padding:2px 8px;background:var(--accent-soft);color:var(--accent)}
+.st{font-size:12px;font-weight:700}
+.st.pend{color:var(--warn)}.st.ok{color:var(--ok)}.st.ng{color:var(--ios-sub)}
+.ibtn{font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:5px 10px;border:0;background:rgba(14,107,102,.12);color:var(--ios-blue);cursor:pointer}
+.ibtn.fill{background:var(--ios-blue);color:#fff}
+.ibtn:disabled{opacity:.35;cursor:default}
+.bigbtn{display:block;width:100%;font:inherit;font-weight:700;font-size:17px;border:0;border-radius:16px;padding:16px;background:var(--ios-blue);color:#fff;cursor:pointer}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px}
+.kpi{background:var(--ios-cell);border-radius:12px;padding:10px 12px}
+.kpi b{display:block;font-size:20px}
+.kpi span{font-size:11px;color:var(--ios-sub)}
+.kpi.ok b{color:var(--ok)}.kpi.bad b{color:var(--bad)}
+.qrbox{display:flex;justify-content:center;padding:12px}
+.qrbox svg{width:170px;height:170px;background:#fff;border-radius:10px;padding:6px}
+.tabbar{flex:none;display:flex;justify-content:space-around;border-top:.5px solid var(--ios-sep);background:var(--ios-cell);padding:6px 0 16px;font-size:10px;color:var(--ios-sub)}
+.tabbar div{text-align:center;cursor:pointer}
+.tabbar div.on{color:var(--ios-blue);font-weight:700}
+.tabbar i{display:block;font-style:normal;font-size:18px}
+.sched{border-collapse:collapse;font-size:11px;margin:0 auto}
+.sched td,.sched th{border:1px solid var(--line);padding:2px 3px;text-align:center;min-width:20px}
+.sched th{background:var(--surface-2);font-weight:700}
+.s1{background:transparent}.s2{background:#FFE2C0;color:#14262A}.s3{background:#2C3874;color:#fff}.s0{color:var(--ios-sub)}
+/* alert */
+.alert-bg{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:5}
+.alert-bg[hidden]{display:none}
+.alert{width:270px;background:var(--ios-cell);border-radius:14px;text-align:center;overflow:hidden}
+.alert .t{font-weight:700;padding:16px 16px 2px}
+.alert .m{font-size:13px;padding:2px 16px 14px;color:var(--ink)}
+.alert .b{display:flex;border-top:.5px solid var(--ios-sep)}
+.alert .b button{flex:1;font:inherit;border:0;background:none;padding:11px;color:var(--ios-blue);cursor:pointer}
+.alert .b button+button{border-left:.5px solid var(--ios-sep);font-weight:700}
+.toast{position:absolute;left:50%;bottom:80px;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;font-size:13px;padding:8px 14px;border-radius:99px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+/* pc */
+.pcwrap{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:12px}
+.pcbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--surface-2);font-size:12px;color:var(--muted)}
+.pcbar i{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block}
+.pcwrap iframe{border:0;width:100%;height:78vh;min-height:560px;display:block;background:var(--bg)}
+.marks{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0}
+.marks .r{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0;font-size:13px}
+.marks .lbl{min-width:100%;font-weight:700;font-size:13px;margin-top:6px}
+.mk{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:9px;font-weight:700;border:1.5px solid var(--line);background:var(--surface)}
+.mk.o{color:var(--ok)}.mk.t{color:var(--accent)}.mk.w{color:var(--warn)}.mk.x{color:var(--bad)}
+.mk.soft{border-color:var(--accent);color:var(--accent)}.mk.soft.n{border-color:var(--sat);color:var(--sat)}
+.mk.hard{background:var(--accent);border-color:var(--accent);color:#fff}.mk.hard.n{background:var(--sat);border-color:var(--sat)}
+.codebox{font-family:var(--f-display);font-size:28px;letter-spacing:.12em;color:var(--accent)}
+@media (max-width:720px){.phone{height:680px}.explain{max-width:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>ShiftNest 画面見本</h1>
+  <p class="lead">スタッフの入力画面と、管理者の画面（iPhoneアプリ・パソコン）を、実際の動きに近い形で試せます。入力した内容はどこにも送られません。</p>
+</header>
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="staff" aria-selected="true">① スタッフの入力（スマホ）</button>
+  <button role="tab" data-tab="ios" aria-selected="false">② 管理者（iPhoneアプリ）</button>
+  <button role="tab" data-tab="pc" aria-selected="false">③ 管理者（パソコン）</button>
+</nav>
+
+<!-- ① スタッフ -->
+<section class="view" id="v-staff">
+  <div class="row">
+    <div class="phone"><div class="scr"><iframe id="nurseFrame" title="スタッフの入力画面" src="../nurse/#i=eyJ2IjoxLCJ3Ijoi44K144Oz44OX44Or55eF5qOfIiwieW0iOiIyMDI2LTEyIiwiZGwiOiIxMS8xMCIsImsiOiJCTkwyRVhzdWN3M1JQZGJkV0drSnlkR05aLU8zcUZSbWd2WjNiU01sMFF5OWJ1SHZ6THhCeURZSHJlTVdMMUxySmxUMnFkaDJhNWlhcTJZT0NJWXJZaEkiLCJob2wiOltdLCJ5ZSI6dHJ1ZSwibWQiOiIzIiwicHYiOjEsImUiOiJfc2t3SzFocl9DYllmeUJXOHkxdWV1b01WMGFlRFJDNDhySWRZWV9RSVdVNENWR1lpTE9iZUg4LTRfd1NPS0pYaVlJS0pSaDQybWxhQU1EeFBhSmE1b2VrQzluMzlqejZHLVhhVktYTnVyMDd6ZHlKVzZxYkxhRm5NSUpMNmVhNEFaMHh2Ym9adV80TEp6NnFFNGN5UmJpcllHSWRUNTlJeGFvUE5fVG8zSW95M28xc3Fybmh4aDhkeUNPdmh0dU0yYTlrRzh3SmQ2Q2dIeS14U1JQOEFuUEUtTFV4YjZDbkxkMmVnWTZfSUFxNVdxcnh6c01vcGIzajVBS2FZSTRNQ2M1MGx0T2k4NER2bXl1OEJnTmF6Q3BDYXdJX0ZfRTBNMDRJLVB1cFNvRVpkMFhLVldvNzZoaGljM0Ixd2QtdmZ1V0IyT3VTazNQbVNvMGI0Vm80eGk0N19QNUtGLWxKeDB3QjlaME9VOG01MllDTGFVMUxBc2tMTDRVQlZiT24wWUxpT19KSC1CczRlcElGRjMtdnYzZkgyOUxWTHgyaXNieXdld0FtR3pSczNieUprYXBfTFd5QjBYM0NYTjlreXpyQWFWMXo0NVAwUkxSOVI2Tm9pX1NTXzJqTUJUY0QtSGlJVkM5OVIxZldfU3VienhnZmN0VzhXQ25td2p6eXBmYjl6Qm5DRTFyOW04dmtzNmUyS1BrRl93YnhsdkE4aDRzUFQzdFotOE9ERFlnT2JYS004dFdjeVEifQ"></iframe></div></div>
+    <div class="explain">
+      <h2>スタッフはリンクを開くだけ</h2>
+      <p>アプリは不要です。管理者から届いたリンク（または掲示のQR）をスマホで開きます。</p>
+      <ol>
+        <li>職場の合言葉を入れる：<span class="key">さくら</span><br><span class="note">最初の1回だけ。名前の一覧を職場の人だけに見せるためです。</span></li>
+        <li>名前を選び、自分の合言葉（数字4けた）を決める。メールは任意。</li>
+        <li>カレンダーで日をタップ。<br>「休み（◯△×）」「勤務の希望（日勤・準夜・深夜）」「有休を申請」を切り替えます。</li>
+        <li>「勤務の希望」→「必ず」は病院の仕事があるときだけ。仕事の内容を入れないと付けられません。</li>
+        <li>はじめての月だけ、先月の最後の2日の勤務を聞きます。</li>
+        <li>「管理者に送る」→ 暗号化された回答をQR・LINE・メールで渡します。</li>
+      </ol>
+      <div class="marks">
+        <div class="lbl">休みの希望（「休み」タブ）</div>
+        <div class="r"><span class="mk o">◯</span>大丈夫 <span class="mk t">△</span>できれば勤務OK <span class="mk w">▲</span>できれば休み <span class="mk x">×</span>絶対休み</div>
+        <div class="lbl">勤務の希望（「勤務の希望」タブ）・なるべく＝枠だけ</div>
+        <div class="r"><span class="mk soft">日</span>日勤希望 <span class="mk soft n">準</span>準夜希望 <span class="mk soft n">深</span>深夜希望 <span class="note">（2交代は <span class="mk soft n">夜</span>夜勤希望）</span></div>
+        <div class="lbl">必ず＝塗りつぶし（病院の仕事があるときだけ）</div>
+        <div class="r"><span class="mk hard">日</span><span class="mk hard n">準</span><span class="mk hard n">深</span><span class="note">仕事の内容（委員会・研修など）を入れないと付けられません。管理者が「必ずで認める」と確定。病院が免除してくれれば「なるべく」に変更できます。</span></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" aria-pressed="true" data-nurse="3">3交代の職場</button>
+        <button class="btn" aria-pressed="false" data-nurse="2">2交代の職場</button>
+        <button class="btn" id="nurseReset">最初から</button>
+      </div>
+      <p class="note">見本の名簿はサンプルです。送信しても開けるiPhoneがないので、どこにも届きません。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ② iPhone -->
+<section class="view" id="v-ios" hidden>
+  <div class="row">
+    <div class="phone"><div class="scr">
+      <div class="notch"><span>9:41</span><span>●●● 100%</span></div>
+      <div class="ios" id="ios"></div>
+      <div class="tabbar" id="iosTabs">
+        <div data-s="home"><i>▦</i>勤務表</div>
+        <div data-s="invite"><i>✉</i>希望を聞く</div>
+        <div data-s="import"><i>⇣</i>取り込む</div>
+        <div data-s="staff"><i>👥</i>スタッフ</div>
+      </div>
+      <div class="alert-bg" id="alert" hidden><div class="alert"><div class="t" id="alT"></div><div class="m" id="alM"></div><div class="b"><button id="alNo">やめる</button><button id="alYes">送る</button></div></div></div>
+      <div class="toast" id="toast"></div>
+    </div></div>
+    <div class="explain" id="iosExplain"></div>
+  </div>
+</section>
+
+<!-- ③ PC -->
+<section class="view" id="v-pc" hidden>
+  <div class="explain" style="max-width:none">
+    <h2>パソコンは大きな画面で確認・編集</h2>
+    <p>病院の共有パソコンでもインストール不要。iPhoneから自分あてにメールで送ったリンクを開き、iPhoneに出ている6桁の番号を入れます。パソコンには何も残らず、10分操作がないと自動で閉じます。</p>
+    <p>この見本の番号：<span class="codebox">135790</span></p>
+    <div class="btnrow"><a class="btn primary" id="pcOpen" href="../pc/#d=U05GMZPKifechra4G22LeGVLki6g4eoRDM9jH114ADeHWZO3JPUK4WzGCTGi8xH28bmMqBCs2i3km6ai_MtYHrhSIB-mQv28kKfhOYAKrtRtB7aHBMIKC80_mAtQEAPBlWSmeVHQAw2Tvf1vKJpwT8sY-4ovwU_jYBx0Cq-GM0HYH6FncS8Qftz33XGPsMFYcdP7fdFRA1FO48R7kMcJJSDIrehl-RNmG6WoQfWwX8bvMAByd0LMjSKOW6k0BZqQr-UzMXbnZfyjWt2aPxZdVBQ3twwszFS9z-fKVntsRgKUWe1Skt0se7vE00ZAPHFs7DgviQwrDS7xSBhlmAXbOKoqBVFWnSQcgkov6xs52qKqan03x0DrM5UsYQ6-GjJaF0PD0ckzPUDYOIDfDcCe8-bNakJZFKlKQnODISuUH03fpVWEtksor7Bcti7Q9niWeNBkAL77CnNR3740EMgcp9pMiweFGPMYwsDNax8e-zVhnFnz7ynKLIf9Qj-Klsau6yz2-FeFvoVyoNr4gWfqRU7Wqk_XYMDIKUFD_ZB90Ct1cgaW6iabCdv05-m_GWe53y4VVP0MqRTuF3tXTLHQn5A3rb3652Yc4sWlrweGRiaDwy24Ie2OlFcXrnpCc9X46ijsflMmitSmYVYNfHz3ozQ2COSG4gh08b2_0uA4aTbEdEU8u2pvQqFuA5zOf2kQjnlSyBruNsvxBQB9P6Q48o3gxyLjReesZsw23tMozBs2o0ajNFgrCHzDHpbTHWrKEgPcm1DxLbhLOacHtmjfavyvXsTHxX-iGhO2gqO0_CNUyDJvbw0sl-5B6txsKmf-dnmHu8khgq1i8U89Qy4-XdrzPx1-EFscMy3eG25mweTIocSC6yHzEE4tnhiNk5PDAiwlyFD2BCIQtdkISmQJ1Qksskxctfnmw4lrGBBwUaOapKF9Q6Hk8cnZh_g4WtKvItNyH_U9fCbANZvhRjgSBy5sMAiuzR4vxp28wN2cWHL47UxdE7VmDDX-CL1BV0NR6aQZgHhPvzX8W9f8_g20b_wjbHoiPNjFL3X_2N2UFKW3cI-axpbDEIcEV-Rny99RR9BVl97oF3hBBD77SUHjURsg7HP6wO52dQwLDCA6m6nJc0hW_Mr-M1WPVy5aFLRWeoiN2WBNlLMrVHk-V7IyfgI0MEG6J7ix9P70at4tFmJ8-Fyp8yCnZeRc1y6tR9TusHUeTPXhMuFpPR7RG9Dy5MfLdHkQoXU015VbCp4a8xcm7UgNAOIRLt-grBUh5i8Fn0D0BqiKTKYx-UbVSw7CSGUrLaAfPP33yOvLzjg8ClYoH4CRRjQ-MdC74yX1nU9AlWeRW5P3uZJtxtxpc12p9h5_xuGGmYu4gfA6ULm_qrjbAwUrIL6BYQSRpEFUBIjbo5NVDMMe7DCzvbDzVG0KF8IEBHgZ_OMAZrkGDW01aWn-CidaE7UQ0GZaNLsDKoW_eY0-jPeykmR0a7__53eD2fqyOVEzUXsZmFXg2TXC9ZvLPKsocQ2qQafH-6ltww3LRf4_HqSUznHLbcJXzQ8QwxvUpbM8USnOB1lwsaoTAJaQg-ZQRgu5yO4Xdem9rYAor1u23Q68w_jixk2m_rBcXcNIXR65wWwkVrW0sKHnepAuxTRewjRSwwjLUyUjTQFUb14kgb9A91Amkr8ZJmQgYSzfyc90qQ8P5gNmroF7W2TbN5E" target="_blank" rel="noopener">新しいタブで大きく開く</a><button class="btn" id="pcReload">見本を最初から</button></div>
+  </div>
+  <div class="pcwrap"><div class="pcbar"><i></i><i></i><i></i><span>ShiftNest パソコン版（見本データ）</span></div><iframe id="pcFrame" title="パソコン版" src="../pc/#d=U05GMZPKifechra4G22LeGVLki6g4eoRDM9jH114ADeHWZO3JPUK4WzGCTGi8xH28bmMqBCs2i3km6ai_MtYHrhSIB-mQv28kKfhOYAKrtRtB7aHBMIKC80_mAtQEAPBlWSmeVHQAw2Tvf1vKJpwT8sY-4ovwU_jYBx0Cq-GM0HYH6FncS8Qftz33XGPsMFYcdP7fdFRA1FO48R7kMcJJSDIrehl-RNmG6WoQfWwX8bvMAByd0LMjSKOW6k0BZqQr-UzMXbnZfyjWt2aPxZdVBQ3twwszFS9z-fKVntsRgKUWe1Skt0se7vE00ZAPHFs7DgviQwrDS7xSBhlmAXbOKoqBVFWnSQcgkov6xs52qKqan03x0DrM5UsYQ6-GjJaF0PD0ckzPUDYOIDfDcCe8-bNakJZFKlKQnODISuUH03fpVWEtksor7Bcti7Q9niWeNBkAL77CnNR3740EMgcp9pMiweFGPMYwsDNax8e-zVhnFnz7ynKLIf9Qj-Klsau6yz2-FeFvoVyoNr4gWfqRU7Wqk_XYMDIKUFD_ZB90Ct1cgaW6iabCdv05-m_GWe53y4VVP0MqRTuF3tXTLHQn5A3rb3652Yc4sWlrweGRiaDwy24Ie2OlFcXrnpCc9X46ijsflMmitSmYVYNfHz3ozQ2COSG4gh08b2_0uA4aTbEdEU8u2pvQqFuA5zOf2kQjnlSyBruNsvxBQB9P6Q48o3gxyLjReesZsw23tMozBs2o0ajNFgrCHzDHpbTHWrKEgPcm1DxLbhLOacHtmjfavyvXsTHxX-iGhO2gqO0_CNUyDJvbw0sl-5B6txsKmf-dnmHu8khgq1i8U89Qy4-XdrzPx1-EFscMy3eG25mweTIocSC6yHzEE4tnhiNk5PDAiwlyFD2BCIQtdkISmQJ1Qksskxctfnmw4lrGBBwUaOapKF9Q6Hk8cnZh_g4WtKvItNyH_U9fCbANZvhRjgSBy5sMAiuzR4vxp28wN2cWHL47UxdE7VmDDX-CL1BV0NR6aQZgHhPvzX8W9f8_g20b_wjbHoiPNjFL3X_2N2UFKW3cI-axpbDEIcEV-Rny99RR9BVl97oF3hBBD77SUHjURsg7HP6wO52dQwLDCA6m6nJc0hW_Mr-M1WPVy5aFLRWeoiN2WBNlLMrVHk-V7IyfgI0MEG6J7ix9P70at4tFmJ8-Fyp8yCnZeRc1y6tR9TusHUeTPXhMuFpPR7RG9Dy5MfLdHkQoXU015VbCp4a8xcm7UgNAOIRLt-grBUh5i8Fn0D0BqiKTKYx-UbVSw7CSGUrLaAfPP33yOvLzjg8ClYoH4CRRjQ-MdC74yX1nU9AlWeRW5P3uZJtxtxpc12p9h5_xuGGmYu4gfA6ULm_qrjbAwUrIL6BYQSRpEFUBIjbo5NVDMMe7DCzvbDzVG0KF8IEBHgZ_OMAZrkGDW01aWn-CidaE7UQ0GZaNLsDKoW_eY0-jPeykmR0a7__53eD2fqyOVEzUXsZmFXg2TXC9ZvLPKsocQ2qQafH-6ltww3LRf4_HqSUznHLbcJXzQ8QwxvUpbM8USnOB1lwsaoTAJaQg-ZQRgu5yO4Xdem9rYAor1u23Q68w_jixk2m_rBcXcNIXR65wWwkVrW0sKHnepAuxTRewjRSwwjLUyUjTQFUb14kgb9A91Amkr8ZJmQgYSzfyc90qQ8P5gNmroF7W2TbN5E"></iframe></div>
+</section>
+
+<script src="../vendor/qrcode.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const LINKS={n3:'../nurse/#i=eyJ2IjoxLCJ3Ijoi44K144Oz44OX44Or55eF5qOfIiwieW0iOiIyMDI2LTEyIiwiZGwiOiIxMS8xMCIsImsiOiJCTkwyRVhzdWN3M1JQZGJkV0drSnlkR05aLU8zcUZSbWd2WjNiU01sMFF5OWJ1SHZ6THhCeURZSHJlTVdMMUxySmxUMnFkaDJhNWlhcTJZT0NJWXJZaEkiLCJob2wiOltdLCJ5ZSI6dHJ1ZSwibWQiOiIzIiwicHYiOjEsImUiOiJfc2t3SzFocl9DYllmeUJXOHkxdWV1b01WMGFlRFJDNDhySWRZWV9RSVdVNENWR1lpTE9iZUg4LTRfd1NPS0pYaVlJS0pSaDQybWxhQU1EeFBhSmE1b2VrQzluMzlqejZHLVhhVktYTnVyMDd6ZHlKVzZxYkxhRm5NSUpMNmVhNEFaMHh2Ym9adV80TEp6NnFFNGN5UmJpcllHSWRUNTlJeGFvUE5fVG8zSW95M28xc3Fybmh4aDhkeUNPdmh0dU0yYTlrRzh3SmQ2Q2dIeS14U1JQOEFuUEUtTFV4YjZDbkxkMmVnWTZfSUFxNVdxcnh6c01vcGIzajVBS2FZSTRNQ2M1MGx0T2k4NER2bXl1OEJnTmF6Q3BDYXdJX0ZfRTBNMDRJLVB1cFNvRVpkMFhLVldvNzZoaGljM0Ixd2QtdmZ1V0IyT3VTazNQbVNvMGI0Vm80eGk0N19QNUtGLWxKeDB3QjlaME9VOG01MllDTGFVMUxBc2tMTDRVQlZiT24wWUxpT19KSC1CczRlcElGRjMtdnYzZkgyOUxWTHgyaXNieXdld0FtR3pSczNieUprYXBfTFd5QjBYM0NYTjlreXpyQWFWMXo0NVAwUkxSOVI2Tm9pX1NTXzJqTUJUY0QtSGlJVkM5OVIxZldfU3VienhnZmN0VzhXQ25td2p6eXBmYjl6Qm5DRTFyOW04dmtzNmUyS1BrRl93YnhsdkE4aDRzUFQzdFotOE9ERFlnT2JYS004dFdjeVEifQ',n2:'../nurse/#i=eyJ2IjoxLCJ3Ijoi44K144Oz44OX44Or55eF5qOfIiwieW0iOiIyMDI2LTEyIiwiZGwiOiIxMS8xMCIsImsiOiJCTkwyRVhzdWN3M1JQZGJkV0drSnlkR05aLU8zcUZSbWd2WjNiU01sMFF5OWJ1SHZ6THhCeURZSHJlTVdMMUxySmxUMnFkaDJhNWlhcTJZT0NJWXJZaEkiLCJob2wiOltdLCJ5ZSI6dHJ1ZSwibWQiOiIyIiwicHYiOjEsImUiOiJfc2t3SzFocl9DYllmeUJXOHkxdWV1b01WMGFlRFJDNDhySWRZWV9RSVdVNENWR1lpTE9iZUg4LTRfd1NPS0pYaVlJS0pSaDQybWxhQU1EeFBhSmE1b2VrQzluMzlqejZHLVhhVktYTnVyMDd6ZHlKVzZxYkxhRm5NSUpMNmVhNEFaMHh2Ym9adV80TEp6NnFFNGN5UmJpcllHSWRUNTlJeGFvUE5fVG8zSW95M28xc3Fybmh4aDhkeUNPdmh0dU0yYTlrRzh3SmQ2Q2dIeS14U1JQOEFuUEUtTFV4YjZDbkxkMmVnWTZfSUFxNVdxcnh6c01vcGIzajVBS2FZSTRNQ2M1MGx0T2k4NER2bXl1OEJnTmF6Q3BDYXdJX0ZfRTBNMDRJLVB1cFNvRVpkMFhLVldvNzZoaGljM0Ixd2QtdmZ1V0IyT3VTazNQbVNvMGI0Vm80eGk0N19QNUtGLWxKeDB3QjlaME9VOG01MllDTGFVMUxBc2tMTDRVQlZiT24wWUxpT19KSC1CczRlcElGRjMtdnYzZkgyOUxWTHgyaXNieXdld0FtR3pSczNieUprYXBfTFd5QjBYM0NYTjlreXpyQWFWMXo0NVAwUkxSOVI2Tm9pX1NTXzJqTUJUY0QtSGlJVkM5OVIxZldfU3VienhnZmN0VzhXQ25td2p6eXBmYjl6Qm5DRTFyOW04dmtzNmUyS1BrRl93YnhsdkE4aDRzUFQzdFotOE9ERFlnT2JYS004dFdjeVEifQ',pc:'../pc/#d=U05GMZPKifechra4G22LeGVLki6g4eoRDM9jH114ADeHWZO3JPUK4WzGCTGi8xH28bmMqBCs2i3km6ai_MtYHrhSIB-mQv28kKfhOYAKrtRtB7aHBMIKC80_mAtQEAPBlWSmeVHQAw2Tvf1vKJpwT8sY-4ovwU_jYBx0Cq-GM0HYH6FncS8Qftz33XGPsMFYcdP7fdFRA1FO48R7kMcJJSDIrehl-RNmG6WoQfWwX8bvMAByd0LMjSKOW6k0BZqQr-UzMXbnZfyjWt2aPxZdVBQ3twwszFS9z-fKVntsRgKUWe1Skt0se7vE00ZAPHFs7DgviQwrDS7xSBhlmAXbOKoqBVFWnSQcgkov6xs52qKqan03x0DrM5UsYQ6-GjJaF0PD0ckzPUDYOIDfDcCe8-bNakJZFKlKQnODISuUH03fpVWEtksor7Bcti7Q9niWeNBkAL77CnNR3740EMgcp9pMiweFGPMYwsDNax8e-zVhnFnz7ynKLIf9Qj-Klsau6yz2-FeFvoVyoNr4gWfqRU7Wqk_XYMDIKUFD_ZB90Ct1cgaW6iabCdv05-m_GWe53y4VVP0MqRTuF3tXTLHQn5A3rb3652Yc4sWlrweGRiaDwy24Ie2OlFcXrnpCc9X46ijsflMmitSmYVYNfHz3ozQ2COSG4gh08b2_0uA4aTbEdEU8u2pvQqFuA5zOf2kQjnlSyBruNsvxBQB9P6Q48o3gxyLjReesZsw23tMozBs2o0ajNFgrCHzDHpbTHWrKEgPcm1DxLbhLOacHtmjfavyvXsTHxX-iGhO2gqO0_CNUyDJvbw0sl-5B6txsKmf-dnmHu8khgq1i8U89Qy4-XdrzPx1-EFscMy3eG25mweTIocSC6yHzEE4tnhiNk5PDAiwlyFD2BCIQtdkISmQJ1Qksskxctfnmw4lrGBBwUaOapKF9Q6Hk8cnZh_g4WtKvItNyH_U9fCbANZvhRjgSBy5sMAiuzR4vxp28wN2cWHL47UxdE7VmDDX-CL1BV0NR6aQZgHhPvzX8W9f8_g20b_wjbHoiPNjFL3X_2N2UFKW3cI-axpbDEIcEV-Rny99RR9BVl97oF3hBBD77SUHjURsg7HP6wO52dQwLDCA6m6nJc0hW_Mr-M1WPVy5aFLRWeoiN2WBNlLMrVHk-V7IyfgI0MEG6J7ix9P70at4tFmJ8-Fyp8yCnZeRc1y6tR9TusHUeTPXhMuFpPR7RG9Dy5MfLdHkQoXU015VbCp4a8xcm7UgNAOIRLt-grBUh5i8Fn0D0BqiKTKYx-UbVSw7CSGUrLaAfPP33yOvLzjg8ClYoH4CRRjQ-MdC74yX1nU9AlWeRW5P3uZJtxtxpc12p9h5_xuGGmYu4gfA6ULm_qrjbAwUrIL6BYQSRpEFUBIjbo5NVDMMe7DCzvbDzVG0KF8IEBHgZ_OMAZrkGDW01aWn-CidaE7UQ0GZaNLsDKoW_eY0-jPeykmR0a7__53eD2fqyOVEzUXsZmFXg2TXC9ZvLPKsocQ2qQafH-6ltww3LRf4_HqSUznHLbcJXzQ8QwxvUpbM8USnOB1lwsaoTAJaQg-ZQRgu5yO4Xdem9rYAor1u23Q68w_jixk2m_rBcXcNIXR65wWwkVrW0sKHnepAuxTRewjRSwwjLUyUjTQFUb14kgb9A91Amkr8ZJmQgYSzfyc90qQ8P5gNmroF7W2TbN5E'};
+/* tabs */
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-tab]').forEach(x=>x.setAttribute('aria-selected',x===b));
+  ['staff','ios','pc'].forEach(t=>$('#v-'+t).hidden=t!==b.dataset.tab);
+  try{sessionStorage.setItem('demo-tab',b.dataset.tab);}catch(e){}
+});
+try{const t=sessionStorage.getItem('demo-tab');if(t)document.querySelector(`[data-tab="${t}"]`).click();}catch(e){}
+/* staff frame */
+function clearNurse(){try{Object.keys(localStorage).filter(k=>k.startsWith('sn-')).forEach(k=>localStorage.removeItem(k));}catch(e){}}
+clearNurse();
+document.querySelectorAll('[data-nurse]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-nurse]').forEach(x=>x.setAttribute('aria-pressed',x===b));clearNurse();$('#nurseFrame').src=LINKS['n'+b.dataset.nurse]+'&r='+Date.now();});
+$('#nurseReset').onclick=()=>{clearNurse();const f=$('#nurseFrame');const u=f.src.split('&r=')[0];f.src=u+'&r='+Date.now();};
+$('#pcReload').onclick=()=>{$('#pcFrame').src=LINKS.pc.replace('#','?r='+Date.now()+'#');};
+
+/* ===== iPhone mock ===== */
+const NAMES=['佐藤','鈴木','高橋','田中','伊藤','渡辺','山本','中村','小林','加藤','吉田','山田','佐々木','山口','松本','井上','木村','林','斎藤','清水','山崎','森','池田','橋本','阿部','石川','石田'];
+const M={pass:'さくら',auto:true,sentMail:null,sentLine:null,sentRemind:null,
+  must:[{n:'鈴木',d:'12/10',s:'日勤',r:'感染対策委員会',st:'pend'},{n:'伊藤',d:'12/17',s:'準夜',r:'院内研修の講師',st:'ok'},{n:'山口',d:'12/21',s:'日勤',r:'外来応援',st:'pend'}],
+  leave:[{n:'山本',d:'12/28',st:'pend'}],answered:21,imported:0,screen:'invite'};
+const missing=['松本','林','清水','阿部','石川','石田'];
+const noMail=['井上','林','石川'];
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200);}
+let alertYes=null;
+function ask(t,m,yes){$('#alT').textContent=t;$('#alM').textContent=m;alertYes=yes;$('#alert').hidden=false;}
+$('#alNo').onclick=()=>{$('#alert').hidden=true;};
+$('#alYes').onclick=()=>{$('#alert').hidden=true;alertYes&&alertYes();};
+const now=()=>{const d=new Date();return (d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function qr(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true});}catch(e){return '';}}
+const EXPLAIN={
+ home:`<h2>勤務表を作る</h2><p>締切後に「勤務表を作り直す」を押すだけ。数秒で、ルール（準夜→日勤禁止など）・毎日の人数・区分の組み合わせ・希望を守った案ができます。</p><p>結果には「× の日を守れたか」「必ずの勤務希望」「なるべくの勤務希望」がひと目で出ます。届いた希望で自動で作り直す設定もあります。</p>`,
+ invite:`<h2>スタッフに希望を聞く</h2><ol><li>「職場の合言葉」を決める（朝礼などで口頭で伝える）。</li><li>「まとめてメールで送る」…メールを登録した人全員に1通（BCC）で送信。</li><li>「LINEなどで送る」…職場のLINEグループに1回。</li><li>締切が近づいたら「まだの人にメールで催促」。</li></ol><p>送るボタンは必ず確認が出るので、間違えて連投しません（前に送った時刻も出ます）。</p><p class="note">見本ではボタンを押すと確認画面まで動きます。</p>`,
+ import:`<h2>届いた希望を取り込む</h2><p>スタッフから届いたリンクを押せば、その場で取り込まれます。</p><p><b>全員分を一度に：</b>回答を職場の「提出用LINEグループ」に送ってもらい、締切後にLINEの「トーク履歴を送信」→ ShiftNest。全員分がまとめて入ります（中身は暗号化されていて、グループの人には読めません）。</p>`,
+ staff:`<h2>スタッフ・申請の確認</h2><p>「必ず」の勤務希望（病院の仕事）は、ここで確認して「必ずで認める」を押した日だけ確実に守ります。認めるまでは「なるべく」扱い。あとから変更もできます。</p><p>有休の申請も同じ画面で承認します。</p>`};
+function render(){
+  const s=M.screen;document.querySelectorAll('#iosTabs div').forEach(d=>d.classList.toggle('on',d.dataset.s===s));
+  $('#iosExplain').innerHTML=EXPLAIN[s];
+  const el=$('#ios');let h='';
+  if(s==='home'){
+    h=`<div class="nav"><h3>勤務表</h3></div>
+    <div class="grp"><div class="cells" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:var(--ios-blue)">🌿 ShiftNest</b><span class="pill">3交代</span></div>
+    <div class="cap" style="margin:8px 0 12px">サンプル病棟・スタッフ27人・2026年12月</div><button class="bigbtn" id="solve">✦ 勤務表を作り直す →</button></div></div>
+    <div class="ghead">結果</div>
+    <div class="kpis"><div class="kpi ok"><b>100%</b><span>× の日（14件すべて守った）</span></div><div class="kpi ${M.must.every(x=>x.st!=='pend')?'ok':''}"><b>${M.must.filter(x=>x.st==='ok').length}/${M.must.filter(x=>x.st==='ok').length}</b><span>必ずの勤務希望（認めた分）</span></div>
+    <div class="kpi"><b>9/11</b><span>なるべくの勤務希望</span></div><div class="kpi"><b>68.5h</b><span>月平均夜勤（72h以内）</span></div></div>
+    <div class="ghead">12月の勤務表（一部）</div><div class="grp"><div class="cells" style="padding:10px;overflow-x:auto">${miniTable()}</div></div>
+    <div class="gfoot">表のマスを押すと、その日に急に休む人の代わりの候補（入れ替えも含む）が出ます。PDF・Excel用の文字も出せます。</div>`;
+  }
+  if(s==='invite'){
+    const ok=[...M.pass.normalize('NFKC').trim()].length>=4||M.pass.trim().length>=3;
+    h=`<div class="nav"><span class="back">‹ 勤務表</span><h4>スタッフに希望を聞く</h4></div>
+    <div class="ghead">職場の合言葉</div><div class="grp"><div class="cells"><div class="cell"><input class="tf" id="pass" value="${esc(M.pass)}" placeholder="例：さくら5かい"></div></div></div>
+    <div class="gfoot">スタッフが最初に1回だけ入れる言葉。リンクやQRが漏れても、合言葉を知らない人には名前の一覧が見えません。</div>
+    <div class="ghead">2026年12月の招待</div><div class="grp"><div class="cells">
+      <div class="cell link bold" id="sendMail"><span class="ico">✉︎</span><span class="grow">まとめてメールで送る（24人）</span></div>
+      <div class="cell link" id="sendLine"><span class="ico">⇪</span><span class="grow">LINEなどで送る（グループに1回）</span></div>
+      ${M.sentMail?`<div class="cell"><span class="cap">メールは ${M.sentMail} に送りました</span></div>`:''}
+      ${M.sentLine?`<div class="cell"><span class="cap">LINEなどは ${M.sentLine} に送りました</span></div>`:''}
+      <div class="cell"><span class="cap">メール未登録：${noMail.join('、')}（LINEやQRで届けてください）</span></div></div></div>
+    <div class="gfoot">メールは宛先が互いに見えない「BCC」で1通にまとめて送ります。アドレスはスタッフが同意して登録したもので、このiPhoneにだけ保存されます。</div>
+    <div class="ghead">掲示用QRコード</div><div class="grp"><div class="cells"><div class="qrbox">${qr('https://bokchoyworks-stack.github.io/shiftnest/nurse/')}</div></div></div>
+    <div class="ghead">回答</div><div class="grp"><div class="cells">
+      <div class="cell"><span class="grow">回答</span><span class="val">${M.answered} / 27 人</span></div>
+      <div class="cell"><span class="grow">届いた希望で勤務表を自動で作り直す</span><span class="sw ${M.auto?'':'off'}" id="auto"></span></div>
+      <div class="cell link" data-go="import"><span class="ico">⌗</span><span class="grow">希望を取り込む・反映する</span><span class="chev">›</span></div></div></div>
+    <div class="ghead">まだ回答していない人（${missing.length}人）</div><div class="grp"><div class="cells">
+      <div class="cell">${missing.join('、')}</div>
+      <div class="cell link bold" id="remind"><span class="ico">🔔</span><span class="grow">まだの人にメールで催促（4人）</span></div>
+      <div class="cell link" id="remindLine"><span class="ico">🔔</span><span class="grow">LINEなどで催促</span></div>
+      ${M.sentRemind?`<div class="cell"><span class="cap">催促メールは ${M.sentRemind} に送りました</span></div>`:''}</div></div>
+    <div class="gfoot">催促メールは未回答の人だけに届きます（名前は書きません）。</div>
+    <div class="ghead">はじめての月だけ</div><div class="grp"><div class="cells"><div class="cell link"><span class="ico">🗓</span><span class="grow">先月末の勤務（はじめての月だけ）</span><span class="chev">›</span></div></div></div><div style="height:20px"></div>`;
+  }
+  if(s==='import'){
+    h=`<div class="nav"><span class="back">閉じる</span><h4>希望を取り込む・反映する</h4></div>
+    <div class="ghead">2026年12月の取り込み状況</div><div class="grp"><div class="cells"><div class="cell"><span class="grow">希望を取り込み済み</span><span class="val">${M.answered} / 27人</span></div></div></div>
+    <div class="ghead">全員分をまとめて取り込む（いちばん楽）</div><div class="grp"><div class="cells">
+      <div class="cell"><span class="sub">1. スタッフには、回答を「提出用のLINEグループ」（またはメール）に送ってもらいます。</span></div>
+      <div class="cell"><span class="sub">2. 締切後、LINEでそのグループ →「≡」→「設定」→「トーク履歴を送信」→「ShiftNest」。</span></div>
+      <div class="cell"><span class="sub">3. 全員分が一度に取り込まれます。同じ人が何回も送っていたら、いちばん新しい回答を使います。</span></div>
+      <div class="cell link" id="bulk"><span class="ico">📄</span><span class="grow">保存したファイルからまとめて取り込む</span></div>
+      <div class="cell link" id="paste"><span class="ico">📋</span><span class="grow">ペースト</span></div>
+      ${M.imported?`<div class="cell" style="color:var(--ok);font-weight:700">${M.imported}件の回答を取り込みました</div>`:''}</div></div>
+    <div class="ghead">勤務表に反映</div><div class="grp"><div class="cells"><div class="cell link bold" data-go="home"><span class="ico">✦</span><span class="grow">取り込んだ希望で勤務表を更新</span></div></div></div>
+    <div class="gfoot">保存済みの勤務表は書き換えません。</div>
+    <div class="ghead">1人ずつ取り込む</div><div class="grp"><div class="cells"><div class="cell"><span class="sub">リンク：届いた回答リンクをこのiPhoneで押すと、その場で取り込みます。</span></div><div class="cell link"><span class="ico">⌗</span><span class="grow">スタッフの回答QRを読み取る</span></div></div></div><div style="height:20px"></div>`;
+  }
+  if(s==='staff'){
+    const pend=M.must.filter(x=>x.st==='pend').length+M.leave.filter(x=>x.st==='pend').length;
+    h=`<div class="nav"><h3>スタッフ</h3></div>
+    <div class="grp"><div class="cells"><div class="cell"><span class="grow">登録済み</span><span class="val">27人</span></div><div class="cell"><span class="grow">確認が必要な申請</span><span class="val" style="color:${pend?'var(--warn)':'var(--ok)'}">${pend}件</span></div></div></div>
+    <div class="ghead">「必ず」の勤務希望（病院の仕事）</div><div class="grp"><div class="cells">
+    ${M.must.map((x,i)=>`<div class="cell" style="flex-direction:column;align-items:stretch;gap:6px"><div style="display:flex;gap:8px;align-items:center"><b>${x.n}</b><span class="sub">${x.d} ${x.s}</span><span class="grow"></span><span class="st ${x.st}">${x.st==='ok'?'必ずで認めた':x.st==='ng'?'なるべく扱い':'確認待ち'}</span></div>
+      <span class="sub">${x.r}</span><div style="display:flex;gap:8px"><button class="ibtn" data-must="${i}" data-v="ng" ${x.st==='ng'?'disabled':''}>なるべくにする</button><button class="ibtn fill" data-must="${i}" data-v="ok" ${x.st==='ok'?'disabled':''}>必ずで認める</button></div></div>`).join('')}
+    </div></div><div class="gfoot">認めるまでは「なるべく」として計算します。あとから変えることもできます。</div>
+    <div class="ghead">有休の申請</div><div class="grp"><div class="cells">
+    ${M.leave.map((x,i)=>`<div class="cell"><b>${x.n}</b><span class="sub grow">${x.d}</span>${x.st==='pend'?`<button class="ibtn" data-leave="${i}" data-v="ng">却下</button><button class="ibtn fill" data-leave="${i}" data-v="ok">承認</button>`:`<span class="st ${x.st}">${x.st==='ok'?'承認済み':'却下'}</span>`}</div>`).join('')}
+    </div></div>
+    <div class="ghead">A1 担当A・ベテラン（3人）</div><div class="grp"><div class="cells">${['佐藤','鈴木','高橋'].map(n=>`<div class="cell"><span class="pill">A1</span><span class="grow">${n}</span><span class="chev">›</span></div>`).join('')}</div></div>
+    <div class="ghead">C 担当B・新人（8人）</div><div class="grp"><div class="cells">${['清水','山崎','森'].map((n,i)=>`<div class="cell"><span class="pill">C</span><span class="grow">${n}${i===2?' <span class="cap">夜勤なし期間</span>':''}</span><span class="chev">›</span></div>`).join('')}<div class="cell"><span class="cap">ほか5人…</span></div></div></div><div style="height:20px"></div>`;
+  }
+  el.innerHTML=h;el.scrollTop=0;bind();
+}
+function miniTable(){
+  const L=['休','日','準','深'],rows=[['佐藤','1102310021'],['鈴木','2310011023'],['田中','0123101102'],['山本','1011023101'],['清水','3101102310']];
+  let t='<table class="sched"><tr><th></th>'+[...'1234567890'].map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
+  rows.forEach(([n,p])=>{t+=`<tr><th>${n}</th>`+[...p].map(c=>`<td class="s${c}">${L[+c]}</td>`).join('')+'</tr>';});return t+'</table>';
+}
+function bind(){
+  const p=$('#pass');if(p)p.oninput=e=>{M.pass=e.target.value;};
+  const a=$('#auto');if(a)a.onclick=()=>{M.auto=!M.auto;render();};
+  const sm=$('#sendMail');if(sm)sm.onclick=()=>ask('メールを送りますか？','24人にBCCで送ります。'+(M.sentMail?`\n※ ${M.sentMail} にも送っています。`:''),()=>{M.sentMail=now();toast('（見本）メール作成画面が開きます');render();});
+  const sl=$('#sendLine');if(sl)sl.onclick=()=>ask('LINEなどで送りますか？','次の画面で送り先（職場のLINEグループなど）を選びます。'+(M.sentLine?`\n※ ${M.sentLine} にも送っています。`:''),()=>{M.sentLine=now();toast('（見本）共有シートが開きます');render();});
+  const rm=$('#remind');if(rm)rm.onclick=()=>ask('メールを送りますか？','4人にBCCで送ります。'+(M.sentRemind?`\n※ ${M.sentRemind} にも送っています。`:''),()=>{M.sentRemind=now();toast('（見本）催促メールの作成画面が開きます');render();});
+  const rl=$('#remindLine');if(rl)rl.onclick=()=>ask('LINEなどで送りますか？','次の画面で送り先を選びます。',()=>toast('（見本）共有シートが開きます'));
+  const bk=$('#bulk');if(bk)bk.onclick=()=>{M.imported=6;M.answered=27;toast('6件の回答を取り込みました');render();};
+  const ps=$('#paste');if(ps)ps.onclick=()=>{M.imported=6;M.answered=27;toast('6件の回答を取り込みました');render();};
+  const sv=$('#solve');if(sv)sv.onclick=()=>{sv.textContent='勤務表を作成しています…';setTimeout(()=>{toast('勤務表を作り直しました');render();},900);};
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{M.screen=b.dataset.go;render();});
+  document.querySelectorAll('[data-must]').forEach(b=>b.onclick=()=>{M.must[+b.dataset.must].st=b.dataset.v;toast(M.auto?'届いた希望で勤務表を作り直しています':'変更しました');render();});
+  document.querySelectorAll('[data-leave]').forEach(b=>b.onclick=()=>{M.leave[+b.dataset.leave].st=b.dataset.v;render();});
+}
+document.querySelectorAll('#iosTabs div').forEach(d=>d.onclick=()=>{M.screen=d.dataset.s;render();});
+render();
+</script>
+</body>
+</html>
