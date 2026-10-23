@@ -167,7 +167,7 @@ section.view[hidden]{display:none}
       <div class="notch"><span>9:41</span><span>●●● 100%</span></div>
       <div class="ios" id="ios"></div>
       <div class="tabbar" id="iosTabs">
-        <div data-s="home"><i>▦</i>勤務表</div>
+        <div data-s="home"><i>⌂</i>ホーム</div>
         <div data-s="invite"><i>✉</i>希望を聞く</div>
         <div data-s="import"><i>⇣</i>取り込む</div>
         <div data-s="staff"><i>👥</i>スタッフ</div>
@@ -212,7 +212,7 @@ $('#pcReload').onclick=()=>{$('#pcFrame').src=LINKS.pc.replace('#','?r='+Date.no
 const NAMES=['佐藤','鈴木','高橋','田中','伊藤','渡辺','山本','中村','小林','加藤','吉田','山田','佐々木','山口','松本','井上','木村','林','斎藤','清水','山崎','森','池田','橋本','阿部','石川','石田'];
 const M={pass:'さくら',auto:true,sentMail:null,sentLine:null,sentRemind:null,
   must:[{n:'鈴木',d:'12/10',s:'業務で日勤',r:'感染対策委員会',st:'pend'},{n:'伊藤',d:'12/17',s:'業務で夜勤',r:'院内研修の講師',st:'ok'},{n:'山口',d:'12/21',s:'業務で日勤',r:'外来応援',st:'pend'}],
-  leave:[{n:'山本',d:'12/28',st:'pend'}],answered:21,imported:0,screen:'invite'};
+  leave:[{n:'山本',d:'12/28',st:'pend'}],answered:21,imported:0,screen:'home',phase:'collecting',alt:0,replies:0};
 const missing=['松本','林','清水','阿部','石川','石田'];
 const noMail=['井上','林','石川'];
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200);}
@@ -224,7 +224,9 @@ const now=()=>{const d=new Date();return (d.getMonth()+1)+'/'+d.getDate()+' '+d.
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function qr(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true});}catch(e){return '';}}
 const EXPLAIN={
- home:`<h2>勤務表を作る</h2><p>締切後に「勤務表を作り直す」を押すだけ。数秒で、ルール（準夜→日勤禁止など）・毎日の人数・区分の組み合わせ・希望を守った案ができます。</p><p>結果には「希望休（×）を守れたか」「業務がある日」「日勤・夜勤の希望」がひと目で出ます。届いた希望で自動で作り直す設定もあります。</p>`,
+ home:`<h2>ホーム：いま何をすればいいかが1画面でわかる</h2><p>日付と「締切まであと何日」、いまの状態（希望を集めています → 勤務表を作る → 確定）が上に出ます。大きなボタンは状態に合わせて1つだけ変わります。</p>
+  <div class="btnrow" id="phaseBtns">${[['collecting','集めている'],['ready','そろった'],['built','できた'],['cannot','組めない'],['asking','調整中'],['confirmed','確定']].map(([k,t])=>`<button class="btn" data-ph="${k}" aria-pressed="${M.phase===k}">${t}</button>`).join('')}</div>
+  <p class="note">↑ 見本の状態を切り替えられます。ボタンを押しても次の状態に進みます。</p>`,
  invite:`<h2>スタッフに希望を聞く</h2><ol><li>「職場の合言葉」を決める（朝礼などで口頭で伝える）。</li><li>「まとめてメールで送る」…メールを登録した人全員に1通（BCC）で送信。</li><li>「LINEなどで送る」…職場のLINEグループに1回。</li><li>締切が近づいたら「まだの人にメールで催促」。</li></ol><p>送るボタンは必ず確認が出るので、間違えて連投しません（前に送った時刻も出ます）。</p><p class="note">見本ではボタンを押すと確認画面まで動きます。</p>`,
  import:`<h2>届いた希望を取り込む</h2><p>スタッフから届いたリンクを押せば、その場で取り込まれます。</p><p><b>全員分を一度に：</b>回答を職場の「提出用LINEグループ」に送ってもらい、締切後にLINEの「トーク履歴を送信」→ ShiftNest。全員分がまとめて入ります（中身は暗号化されていて、グループの人には読めません）。</p>`,
  staff:`<h2>スタッフ・申請の確認</h2><p>「業務がある日」（会議・研修など）は、ここで確認して「業務として確定」を押した日だけ必ずその勤務に入れます。確定するまでは希望として扱い、免除されたら戻せます。</p><p>有休の申請も同じ画面で承認します。</p>`};
@@ -233,14 +235,49 @@ function render(){
   $('#iosExplain').innerHTML=EXPLAIN[s];
   const el=$('#ios');let h='';
   if(s==='home'){
-    h=`<div class="nav"><h3>勤務表</h3></div>
-    <div class="grp"><div class="cells" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:var(--ios-blue)">🌿 ShiftNest</b><span class="pill">3交代</span></div>
-    <div class="cap" style="margin:8px 0 12px">サンプル病棟・スタッフ27人・2026年12月</div><button class="bigbtn" id="solve">✦ 勤務表を作り直す →</button></div></div>
-    <div class="ghead">結果</div>
-    <div class="kpis"><div class="kpi ok"><b>100%</b><span>希望休（14件すべて守った）</span></div><div class="kpi ${M.must.every(x=>x.st!=='pend')?'ok':''}"><b>${M.must.filter(x=>x.st==='ok').length}/${M.must.filter(x=>x.st==='ok').length}</b><span>業務がある日（確定分）</span></div>
-    <div class="kpi"><b>9/11</b><span>日勤・夜勤の希望</span></div><div class="kpi"><b>68.5h</b><span>月平均夜勤（72h以内）</span></div></div>
-    <div class="ghead">12月の勤務表（一部）</div><div class="grp"><div class="cells" style="padding:10px;overflow-x:auto">${miniTable()}</div></div>
-    <div class="gfoot">表のマスを押すと、その日に急に休む人の代わりの候補（入れ替えも含む）が出ます。PDF・Excel用の文字も出せます。</div>`;
+    const ph=M.phase,ans=ph==='collecting'?M.answered:27,left=27-ans;
+    const ST={collecting:['📥','希望を集めています',`回答 ${ans}/27人・あと${left}人`,'var(--ios-blue)'],
+      ready:['✅','希望がそろいました','全員（27人）の回答が届きました','var(--ok)'],
+      built:['🗓','勤務表ができました','下の案を確認して、保存・送信してください','var(--ok)'],
+      cannot:['⚠️','このままでは勤務表を作れません','12月24日の夜勤が1人足りません。何人かに勤務の調整をお願いすると作れます','var(--warn)'],
+      asking:['💬','勤務の調整をお願いしています',M.replies?`OKの返事が${M.replies}人から届きました`:'返事を待っています','var(--warn)'],
+      confirmed:['🔒','勤務表を確定しました','保存済みです。PDFで配れます','var(--ok)']}[ph];
+    const cur=ph==='collecting'?0:ph==='confirmed'?2:1;
+    const steps=['希望を集める','勤務表を作る','確定・配る'].map((t,i)=>`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;${i===cur?'background:var(--ios-blue);color:#fff':'background:rgba(120,120,128,.14);color:var(--ios-sub)'}">${t}</span>`).join('<span class="cap">›</span>');
+    let act='';
+    if(ph==='collecting')act=`<button class="bigbtn" data-go="invite">✉︎ スタッフに希望を聞く（回答 ${ans}/27）→</button>
+      <button class="ibtn" style="width:100%;margin-top:8px;padding:10px" data-go="invite">🔔 まだの${left}人に催促する</button>
+      <div style="display:flex;justify-content:space-between;margin-top:8px"><span class="cap" style="color:var(--ios-blue);cursor:pointer" data-go="import">届いた希望を取り込む</span><span class="cap" style="color:var(--ios-blue);cursor:pointer" id="tryMake">集まった分で作ってみる</span></div>`;
+    if(ph==='ready')act=`<button class="bigbtn" id="make">✦ 集まった希望で勤務表を作る →</button>`;
+    if(ph==='built'||ph==='confirmed')act=`<button class="bigbtn" id="pdf">⇪ メール・LINEで送る（PDF）→</button><button class="ibtn" style="width:100%;margin-top:8px;padding:10px" id="make">↻ 希望を入れ直して作り直す</button>`;
+    if(ph==='cannot')act=`<button class="bigbtn" style="background:#B7791F" id="adjust">✈︎ 都合をつけてもらえるか、まとめてお願いする →</button><div class="cap" style="margin-top:6px">候補の人にだけお願いが表示されます。名前は管理者にも表示しません。</div>`;
+    if(ph==='asking')act=(M.replies?`<button class="bigbtn" id="remake">✦ OKの返事で勤務表を作り直す →</button>`:`<button class="bigbtn" style="opacity:.5" id="gotReply">（見本）返事が届いたことにする</button>`)+`<button class="ibtn" style="width:100%;margin-top:8px;padding:10px" id="adjust">✈︎ お願いをもう一度送る</button>`;
+    const alt=['希望休 100%・業務 3/3・日勤・夜勤の希望 9/11・できれば休み 92%','希望休 100%・業務 3/3・日勤・夜勤の希望 8/11・できれば休み 88%','希望休 100%・業務 3/3・日勤・夜勤の希望 7/11・できれば休み 90%'];
+    h=`<div class="nav"><h4>ShiftNest</h4></div>
+    <div class="grp"><div class="cells" style="padding:16px">
+      <div class="cap">今日 ${(()=>{const d=new Date();return (d.getMonth()+1)+'月'+d.getDate()+'日（'+'日月火水木金土'[d.getDay()]+'）';})()}</div>
+      <div style="font-size:21px;font-weight:800;margin:2px 0">2026年12月の勤務表</div>
+      <div style="font-weight:700;color:${ph==='collecting'?'var(--ios-blue)':'var(--ios-sub)'};font-size:14px">${ph==='collecting'?'希望の締切（11/10）まで あと18日':'希望の締切（11/10）を過ぎました'}</div>
+      <div style="margin:14px 0 12px;padding:12px;border-radius:14px;background:color-mix(in srgb, ${ST[3]} 12%, transparent)">
+        <div style="font-weight:800;color:${ST[3]}">${ST[0]} ${ST[1]}</div><div style="font-size:14px;margin-top:2px">${ST[2]}</div>
+        ${ph==='collecting'?`<div style="height:6px;border-radius:99px;background:rgba(120,120,128,.2);margin-top:8px"><div style="height:100%;width:${Math.round(ans/27*100)}%;background:var(--ios-blue);border-radius:99px"></div></div>`:''}
+        <div style="display:flex;gap:4px;align-items:center;margin-top:8px;flex-wrap:wrap">${steps}</div>
+      </div>
+      ${act}
+      <div style="border-top:.5px solid var(--ios-sep);margin:14px 0 4px"></div>
+      <div class="cell" data-go="staff" style="padding-left:0;cursor:pointer"><span class="ico">👥</span><span class="grow">スタッフ一覧（グループ別）</span><span class="val">27人</span><span class="chev">›</span></div>
+      <div class="cell" style="padding-left:0"><span class="ico">➕</span><span class="grow">スタッフを追加</span><span class="chev">›</span></div>
+      <div class="cell" style="padding-left:0"><span class="ico">📁</span><span class="grow">保存した勤務表</span><span class="val">3か月分</span><span class="chev">›</span></div>
+      <div class="cell" style="padding-left:0"><span class="ico">⚙︎</span><span class="grow">細かい設定（人数・区分・ルール）</span><span class="chev">›</span></div>
+    </div></div>
+    ${ph==='built'||ph==='confirmed'?`<div class="ghead">案を選ぶ（希望が多く通った順）</div><div class="grp"><div class="cells" style="padding:10px">
+      <div style="display:flex;background:rgba(120,120,128,.14);border-radius:9px;padding:2px">${[0,1,2].map(i=>`<button data-alt="${i}" style="flex:1;border:0;border-radius:7px;padding:6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;${M.alt===i?'background:var(--ios-cell);box-shadow:0 1px 3px rgba(0,0,0,.15)':'background:transparent;color:var(--ink)'}">案${i+1}</button>`).join('')}</div>
+      <div class="cap" style="margin:8px 2px">${alt[M.alt]}</div>
+      <div style="overflow-x:auto">${miniTable()}</div>
+      ${ph==='built'?`<button class="ibtn fill" style="width:100%;margin-top:10px;padding:10px" id="confirm">✓ この案で確定して保存</button>`:'<div class="cap" style="margin-top:8px;color:var(--ok);font-weight:700">✓ 確定済み（翌月に引き継ぎます）</div>'}
+    </div></div>
+    <div class="kpis" style="margin-top:8px"><div class="kpi ok"><b>100%</b><span>× 希望休</span></div><div class="kpi ok"><b>3/3</b><span>業務がある日</span></div><div class="kpi"><b>${[9,8,7][M.alt]}/11</b><span>日勤・夜勤の希望</span></div><div class="kpi"><b>68.5h</b><span>月平均夜勤（72h以内）</span></div></div>`:''}
+    <div style="height:20px"></div>`;
   }
   if(s==='invite'){
     const ok=[...M.pass.normalize('NFKC').trim()].length>=4||M.pass.trim().length>=3;
@@ -303,6 +340,16 @@ function miniTable(){
   rows.forEach(([n,p])=>{t+=`<tr><th>${n}</th>`+[...p].map(c=>`<td class="s${c}">${L[+c]}</td>`).join('')+'</tr>';});return t+'</table>';
 }
 function bind(){
+  document.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>{M.phase=b.dataset.ph;if(M.phase==='asking')M.replies=0;render();});
+  const go=(ph,t)=>{M.phase=ph;if(t)toast(t);render();};
+  const mk=$('#make');if(mk)mk.onclick=()=>{mk.textContent='作成しています…';setTimeout(()=>go(M.phase==='ready'?'cannot':'built','案を3つ作りました'),900);};
+  const tm=$('#tryMake');if(tm)tm.onclick=()=>go('cannot','集まった分で作りました');
+  const ad=$('#adjust');if(ad)ad.onclick=()=>ask('お願いを送りますか？','メールを登録している24人にBCCで送るか、LINEのグループに送ります。',()=>go('asking','お願いを送りました'));
+  const gr=$('#gotReply');if(gr)gr.onclick=()=>{M.replies=2;render();};
+  const rmk=$('#remake');if(rmk)rmk.onclick=()=>{rmk.textContent='作り直しています…';setTimeout(()=>go('built','OKの返事で作り直しました'),900);};
+  const cf=$('#confirm');if(cf)cf.onclick=()=>go('confirmed','確定して保存しました');
+  const pd=$('#pdf');if(pd)pd.onclick=()=>toast('（見本）メール・LINEの送り先を選ぶ画面が開きます');
+  document.querySelectorAll('[data-alt]').forEach(b=>b.onclick=()=>{M.alt=+b.dataset.alt;render();});
   const p=$('#pass');if(p)p.oninput=e=>{M.pass=e.target.value;};
   const a=$('#auto');if(a)a.onclick=()=>{M.auto=!M.auto;render();};
   const sm=$('#sendMail');if(sm)sm.onclick=()=>ask('メールを送りますか？','24人にBCCで送ります。'+(M.sentMail?`\n※ ${M.sentMail} にも送っています。`:''),()=>{M.sentMail=now();toast('（見本）メール作成画面が開きます');render();});
@@ -311,7 +358,6 @@ function bind(){
   const rl=$('#remindLine');if(rl)rl.onclick=()=>ask('LINEなどで送りますか？','次の画面で送り先を選びます。',()=>toast('（見本）共有シートが開きます'));
   const bk=$('#bulk');if(bk)bk.onclick=()=>{M.imported=6;M.answered=27;toast('6件の回答を取り込みました');render();};
   const ps=$('#paste');if(ps)ps.onclick=()=>{M.imported=6;M.answered=27;toast('6件の回答を取り込みました');render();};
-  const sv=$('#solve');if(sv)sv.onclick=()=>{sv.textContent='勤務表を作成しています…';setTimeout(()=>{toast('勤務表を作り直しました');render();},900);};
   document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{M.screen=b.dataset.go;render();});
   document.querySelectorAll('[data-must]').forEach(b=>b.onclick=()=>{M.must[+b.dataset.must].st=b.dataset.v;toast(M.auto?'届いた希望で勤務表を作り直しています':'変更しました');render();});
   document.querySelectorAll('[data-leave]').forEach(b=>b.onclick=()=>{M.leave[+b.dataset.leave].st=b.dataset.v;render();});
