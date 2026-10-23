@@ -597,7 +597,8 @@ function prefsFor(id){
 function prevFor(list){
   const h=state.history[prevYm(state.ym)];
   return list.map(({st})=>{
-    if(h){const row=h.rows.find(r=>r.name===st.name);if(!row)return [OFF,OFF];const L=row.X.length;return [row.X[L-2],row.X[L-1]].map(c=>c>=6?OFF:c);}
+    if(h){const row=h.rows.find(r=>r.name===st.name);if(row){const L=row.X.length;return [row.X[L-2],row.X[L-1]].map(c=>c>=6?OFF:c);}}
+    const a=(((state.extra||{}).prevEnd||{})[state.ym]||{})[st.id];if(a&&a.length===2)return a.map(c=>c>=6?OFF:c);
     return [OFF,OFF];
   });
 }
@@ -1671,17 +1672,21 @@ function showGate(msg){
     ${linkData?`<div class="card" style="border:2px solid var(--accent)"><h3>メールのリンクから開きました</h3><p class="note" style="margin:0 0 8px">iPhoneの画面に出ている6桁の番号を入れてください。</p>
       <div class="row" style="gap:8px"><input type="text" id="lCode" inputmode="numeric" maxlength="7" placeholder="6桁の番号" style="width:160px;font-size:20px;letter-spacing:.1em" aria-label="6桁の番号" autofocus><button class="btn primary" id="lOpen">開く</button></div></div>`:''}
     <div class="gate-ways">
-      <div class="card"><h3>A. ファイルで開く（カメラがないパソコン）</h3>
-        <ol class="pc-steps"><li>iPhoneの「設定」→「パソコンで使う」→「メール・ファイルで送る」<br><span class="note">メールのリンクを押した場合は、このページが自動で開きます。</span></li><li>届いたファイル（.shiftnest）をここで選ぶ</li><li>iPhoneに出ている6桁の番号を入れる</li></ol>
+      <div class="card" style="border:2px solid var(--accent)"><h3>A. メールのリンクで開く（おすすめ）</h3>
+        <ol class="pc-steps"><li>iPhoneの「設定」→「パソコンで使う」→「メールで送る」で、自分あてに送る</li><li>このパソコンでそのメールを開き、リンクを押す（このページが自動で開きます）</li><li>iPhoneに出ている6桁の番号を入れる</li></ol>
+        <p class="note" style="margin:0">カメラもインストールもいりません。</p>
+      </div>
+      <div class="card"><h3>B. ファイルで開く</h3>
+        <ol class="pc-steps"><li>iPhoneの「パソコンで使う」→「ファイルで送る」</li><li>届いたファイル（.shiftnest）をここで選ぶ</li><li>iPhoneに出ている6桁の番号を入れる</li></ol>
         <div class="row" style="gap:8px"><label class="btn" for="gFile">ファイルを選ぶ</label><input type="file" id="gFile" accept=".shiftnest,application/octet-stream" hidden><span class="note" id="gFileName">まだ選んでいません</span></div>
         <div class="row" style="gap:8px;margin-top:10px"><input type="text" id="gCode" inputmode="numeric" maxlength="7" placeholder="6桁の番号" style="width:140px;font-size:18px;letter-spacing:.1em" aria-label="6桁の番号"><button class="btn primary" id="gOpen">開く</button></div>
       </div>
-      <div class="card"><h3>B. カメラで読み取る</h3>
-        <ol class="pc-steps"><li>iPhoneの「パソコンで使う」→「QRで送る」</li><li>下のボタンを押して、iPhoneの画面をカメラに向ける</li></ol>
-        <button class="btn primary" id="gCam">カメラで読み取る</button>
-        <div id="camBox" hidden><video id="camV" playsinline muted style="width:100%;max-width:360px;border-radius:10px;margin-top:10px;background:#000"></video><p class="note" id="camMsg">読み取り中…</p><button class="btn sm" id="camStop">やめる</button></div>
-      </div>
     </div>
+    <details class="card" style="margin-top:12px"><summary><b>C. カメラで読み取る（パソコンにカメラがあるとき）</b></summary>
+      <ol class="pc-steps"><li>iPhoneの「パソコンで使う」→「QRで送る」</li><li>下のボタンを押して、iPhoneの画面をパソコンのカメラに向ける</li></ol>
+      <button class="btn primary" id="gCam">カメラで読み取る</button>
+        <div id="camBox" hidden><video id="camV" playsinline muted style="width:100%;max-width:360px;border-radius:10px;margin-top:10px;background:#000"></video><p class="note" id="camMsg">読み取り中…</p><button class="btn sm" id="camStop">やめる</button></div>
+    </details>
     <p class="note">このページはデータを保存しません。インターネットにも送りません。操作がないと${IDLE_MIN}分で自動的に閉じます。</p>
   </div>`;
 }
