@@ -16,7 +16,9 @@ function allowedTable(mode){
   return a;
 }
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-const W={hard:10000,ng:6000,x:1000,overN:600,short:400,consec:60,nrun:35,p2:25,p1:6,fairN:5,fairW:3,soft:40,star:800};
+const W={hard:10000,ng:6000,x:1000,overN:600,short:400,consec:60,nrun:35,p2:25,p1:6,fairN:5,fairW:3,soft:40,star:800,want:30,must:900};
+/* 勤務の希望 なるべく：5日勤 6夜勤（3交代は準夜か深夜） 7準夜 8深夜 ／ 必ず：9日勤 10夜勤 11準夜 12深夜 */
+function wantOK(m,q,s){if(q>=9)q-=4;return q===5?s===DAY:q===6?(m.mode==='2'?s===YAK:(s===EVE||s===NIG)):q===7?s===EVE:q===8?s===NIG:true;}
 function buildModel(cfg){
   const {mode,days,staff,prefs,ng,prev,req,rules}=cfg;
   const S=staff.length,D=days.length;
@@ -66,6 +68,7 @@ function rowPen(m,X,n){
   for(let d=0;d<D;d++){
     const s=row[d];
     if(!A[prevS][s])p+=W.hard;
+    {const qq=P[d];if(qq>=5&&!wantOK(m,qq,s))p+=qq>=9?W.must:W.want;}
     if(s===OFF){off++;run=0;nr=0;}
     else if(s>=6){run=0;nr=0;}
     else{
@@ -149,7 +152,7 @@ function initial(m,rnd){
       const k=cnt[c];if(k<=0)continue;
       const ok=n=>free[n]&&!(m.ban[n][d]&(1<<c))&&m.prefs[n][d]!==3&&m.allowed[prevOf(n)][c]&&nights[n]<m.maxNs[n]&&(m.mode==='3'||d+1>=D||(m.prefs[n][d+1]!==3&&!m.fixed[n][d+1]));
       const cands=[];for(let n=0;n<S;n++)if(ok(n))cands.push(n);
-      const sc={};for(const n of cands)sc[n]=(nights[n]-m.expN[n]*(d+1)/D)*10+(m.prefs[n][d]===4?60:m.prefs[n][d]===2?30:m.prefs[n][d]===1?6:0)+(prevOf(n)===c?8:0)+rnd()*4;
+      const sc={};for(const n of cands)sc[n]=(nights[n]-m.expN[n]*(d+1)/D)*10+(m.prefs[n][d]===4?60:m.prefs[n][d]===2?30:m.prefs[n][d]===1?6:0)+(m.prefs[n][d]>=5?(wantOK(m,m.prefs[n][d],c)?(m.prefs[n][d]>=9?-200:-40):(m.prefs[n][d]>=9?100:20)):0)+(prevOf(n)===c?8:0)+rnd()*4;
       cands.sort((a,b)=>sc[a]-sc[b]);
       const picked=[];
       for(const r of m.combo){if(r.type!=='min'||!r.must)continue;let need=r.n-picked.filter(n=>r.gm[m.gi[n]]).length;while(need>0&&picked.length<k){const i=cands.findIndex(n=>r.gm[m.gi[n]]&&!picked.some(q=>m.NG[q][n]));if(i<0)break;picked.push(cands[i]);cands.splice(i,1);need--;}}
@@ -161,7 +164,7 @@ function initial(m,rnd){
     {
       const k=cnt[DAY],rem=D-d;
       const cands=[];for(let n=0;n<S;n++)if(free[n]&&!(m.ban[n][d]&2)&&m.prefs[n][d]!==3&&m.allowed[prevOf(n)][DAY])cands.push(n);
-      const sc={};for(const n of cands)sc[n]=-((D-m.target[n])-works[n])/rem*10+(m.prefs[n][d]===4?9:m.prefs[n][d]===2?4:m.prefs[n][d]===1?1:0)+rnd()*.5;
+      const sc={};for(const n of cands)sc[n]=-((D-m.target[n])-works[n])/rem*10+(m.prefs[n][d]===4?9:m.prefs[n][d]===2?4:m.prefs[n][d]===1?1:0)+(m.prefs[n][d]===5?-9:m.prefs[n][d]===9?-100:m.prefs[n][d]>=10?50:m.prefs[n][d]>=6?6:0)+rnd()*.5;
       cands.sort((a,b)=>sc[a]-sc[b]);
       const picked=cands.slice(0,k);
       for(let n=0;n<S&&picked.length<k;n++)if(free[n]&&!(m.ban[n][d]&2)&&!picked.includes(n))picked.push(n);
@@ -204,7 +207,7 @@ function* solve(m,opt){
 function verify(m,X){
   const {S,D}=m,hard=[],xv=[],short=[],overN=[],ngv=[],stat=new Map();
   const nights=new Int16Array(S),offs=new Int16Array(S),wk=new Int16Array(S),maxRun=new Int16Array(S);
-  const pref={x:[0,0],p2:[0,0],p1:[0,0],star:[0,0]};
+  const pref={x:[0,0],p2:[0,0],p1:[0,0],star:[0,0],want:[0,0],must:[0,0]};
   for(let d=0;d<D;d++){
     const cnt=new Int16Array(8);for(let n=0;n<S;n++)cnt[X[n][d]]++;
     for(let c=0;c<8;c++)if(cnt[c]!==m.need[d][c])hard.push({type:'人数',d,msg:(d+1)+'日の'+LONG[c]+'が'+cnt[c]+'人（必要'+m.need[d][c]+'人）'});
@@ -230,6 +233,7 @@ function verify(m,X){
       if(q===2){pref.p2[1]++;if(s===OFF)pref.p2[0]++;}
       if(q===1){pref.p1[1]++;if(s===OFF)pref.p1[0]++;}
       if(q===4){pref.star[1]++;if(s===OFF)pref.star[0]++;}}
+      if(q>=5){const k=q>=9?'must':'want';pref[k][1]++;if(wantOK(m,q,s))pref[k][0]++;}
       prevS=s;
     }
     if(offs[n]<m.target[n])short.push({n,lack:m.target[n]-offs[n]});
