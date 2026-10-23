@@ -138,18 +138,19 @@ section.view[hidden]{display:none}
       <ol>
         <li>職場の合言葉を入れる：<span class="key">さくら</span><br><span class="note">最初の1回だけ。名前の一覧を職場の人だけに見せるためです。</span></li>
         <li>名前を選び、自分の合言葉（数字4けた）を決める。メールは任意。</li>
-        <li>カレンダーで日をタップ。<br>「休み（◯△×）」「勤務の希望（日勤・準夜・深夜）」「有休を申請」を切り替えます。</li>
-        <li>「勤務の希望」→「必ず」は病院の仕事があるときだけ。仕事の内容を入れないと付けられません。</li>
+        <li>1画面だけ。印を選んで、カレンダーの日をタップするだけです。何も付けない日は「どちらでもOK」。</li>
+        <li>「必ず日勤・必ず夜勤」は病院の仕事があるときだけ。仕事の内容を入れないと付けられず、管理者が認めると確定します。</li>
         <li>はじめての月だけ、先月の最後の2日の勤務を聞きます。</li>
         <li>「管理者に送る」→ 暗号化された回答をQR・LINE・メールで渡します。</li>
       </ol>
       <div class="marks">
-        <div class="lbl">休みの希望（「休み」タブ）</div>
-        <div class="r"><span class="mk o">◯</span>大丈夫 <span class="mk t">△</span>できれば勤務OK <span class="mk w">▲</span>できれば休み <span class="mk x">×</span>絶対休み</div>
-        <div class="lbl">勤務の希望（「勤務の希望」タブ）・なるべく＝枠だけ</div>
-        <div class="r"><span class="mk soft">日</span>日勤希望 <span class="mk soft n">準</span>準夜希望 <span class="mk soft n">深</span>深夜希望 <span class="note">（2交代は <span class="mk soft n">夜</span>夜勤希望）</span></div>
-        <div class="lbl">必ず＝塗りつぶし（病院の仕事があるときだけ）</div>
-        <div class="r"><span class="mk hard">日</span><span class="mk hard n">準</span><span class="mk hard n">深</span><span class="note">仕事の内容（委員会・研修など）を入れないと付けられません。管理者が「必ずで認める」と確定。病院が免除してくれれば「なるべく」に変更できます。</span></div>
+        <div class="lbl">休み</div>
+        <div class="r"><span class="mk w">△</span>できれば休み <span class="mk x">×</span>必ず休み <span class="mk o">有</span>有休</div>
+        <div class="lbl">勤務（できれば＝枠だけ）</div>
+        <div class="r"><span class="mk soft">日</span>できれば日勤 <span class="mk soft n">夜</span>できれば夜勤</div>
+        <div class="lbl">必ず（塗りつぶし・病院の仕事のときだけ）</div>
+        <div class="r"><span class="mk hard">日</span>必ず日勤 <span class="mk hard n">夜</span>必ず夜勤</div>
+        <div class="r note">何も付けない日＝どちらでもOK。「夜」は3交代なら準夜か深夜。病院が免除してくれれば管理者が「できれば」に戻せます。</div>
       </div>
       <div class="btnrow">
         <button class="btn" aria-pressed="true" data-nurse="3">3交代の職場</button>
