@@ -101,7 +101,7 @@ function renderInvite(){
       <div id="newBox" ${S.id===0&&S.name?'':'hidden'}><label class="f" for="nm">勤務表に載せる名前（苗字やニックネーム）</label><input type="text" id="nm" maxlength="10" value="${esc(S.id?'':S.name)}"></div>
       <label class="f" for="pin">合言葉（数字4けた・自分で決める）</label>
       <input type="tel" id="pin" inputmode="numeric" maxlength="4" placeholder="例：2580" autocomplete="off">
-      <p class="note">合言葉は、あとで師長から「お願い」が届いたときに、あなただけが読むために使います。どこにも送られません。</p>
+      <p class="note">合言葉は、あとで管理者から「お願い」が届いたときに、あなただけが読むために使います。どこにも送られません。</p>
       <button class="btn primary block" id="next1">次へ</button></div>`;
     $('#who').onchange=e=>{$('#newBox').hidden=e.target.value!=='new';};
     $('#next1').onclick=()=>{const v=$('#who').value;const pin=$('#pin').value.trim();
@@ -117,16 +117,16 @@ function renderInvite(){
     app.innerHTML=head+`<div class="card"><h2>2. だめな日だけタップ（${esc(S.name)}さん）</h2>
       <div class="seg"><button data-mode="pref" aria-pressed="${S.mode==='pref'}">希望（◯△×）</button><button data-mode="leave" aria-pressed="${S.mode==='leave'}">有休を申請</button></div>
       ${star?'<div class="box star" style="margin-top:10px"><b style="color:var(--star)">★ 先月はお願いに協力してくれてありがとう</b><br>今月は「優先休み」を1日使えます（× の次にもう1回タップ）。</div>':''}
-      ${S.mode==='leave'?'<div class="box ok" style="margin-top:10px">休みたい日をタップ。師長が承認すると「有給」になります（週休とは別）。</div>':`<div class="legend">${MARK.slice(0,star?5:4).map((k,i)=>`<span><b class="m${i}">${k}</b> ${MARK_TXT[i]}</span>`).join('')}</div>`}
+      ${S.mode==='leave'?'<div class="box ok" style="margin-top:10px">休みたい日をタップ。管理者が承認すると「有給」になります（週休とは別）。</div>':`<div class="legend">${MARK.slice(0,star?5:4).map((k,i)=>`<span><b class="m${i}">${k}</b> ${MARK_TXT[i]}</span>`).join('')}</div>`}
       <div class="cal" style="margin-top:10px">${[...WD].map((w,i)=>`<div class="wd ${i===0?'su':i===6?'sa':''}">${w}</div>`).join('')}${'<div></div>'.repeat(lead)}
       ${S.days.map((d,i)=>{const dn=`<span class="dn ${d.dow===0||d.name?'su':d.dow===6?'sa':''}">${d.day}</span>`;
         if(fx.has(d.day))return `<button class="fx" disabled>${dn}<span class="tag">有給</span></button>`;
         if(S.lv.includes(d.day))return `<button class="lv" data-d="${i}">${dn}<span class="tag">申請</span></button>`;
         const q=S.p[i];return `<button class="v${q}" data-d="${i}" aria-label="${d.day}日 ${MARK_TXT[q]}">${dn}<span class="mk m${q}">${MARK[q]}</span></button>`;}).join('')}</div>
       </div>
-      <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">師長にも見えません</span> アプリの中だけで使います。</p>
+      <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">管理者にも見えません</span> アプリの中だけで使います。</p>
       <div class="chips">${(inv.s||[]).filter(([id])=>id!==S.id).map(([id,n])=>`<button data-ng="${id}" aria-pressed="${S.ng.includes(id)}">${esc(n)}</button>`).join('')}</div></div>
-      <button class="btn primary block" id="send">師長に送る</button>
+      <button class="btn primary block" id="send">管理者に送る</button>
       <button class="btn block" id="back">名前・合言葉からやり直す</button>`;
     app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render();});
     app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=+b.dataset.d,day=S.days[i].day;
@@ -141,7 +141,7 @@ function renderInvite(){
       $('#send').disabled=true;$('#send').textContent='暗号化しています…';
       try{const rk=SNCodec.b64u.enc(await SNCodec.reqKey(S.pin,S.name));
         S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk});
-        S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='師長に送る';}};
+        S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='管理者に送る';}};
     return;
   }
   if(S.step==='done')renderSend(head,'回答ができました','もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
@@ -149,15 +149,15 @@ function renderInvite(){
 function renderSend(head,title,foot,onBack){
   const tok=S.token,link='shiftnest://a?d='+tok;
   $('#app').innerHTML=head+`<div class="card"><h2>${title}</h2>
-    <p class="note" style="margin:0 0 10px">次のどれかで師長に渡してください。中身は暗号化されていて、師長のアプリでしか開けません。</p>
-    <div class="box info"><b>A. 師長に画面を見せる</b>（いちばん確実）<br>師長がアプリでこのQRコードを読み取ります。</div>
+    <p class="note" style="margin:0 0 10px">次のどれかで管理者に渡してください。中身は暗号化されていて、管理者のアプリでしか開けません。</p>
+    <div class="box info"><b>A. 管理者に画面を見せる</b>（いちばん確実）<br>管理者がアプリでこのQRコードを読み取ります。</div>
     <div class="qr" style="margin:10px 0">${qrSvg(tok)}</div>
     <div class="box info"><b>B. メール・メッセージで送る</b></div>
     <div class="row" style="margin:8px 0 12px"><button class="btn" id="share">送る（メール・LINEなど）</button><button class="btn" id="copy">コピー</button></div>
     <code class="tok" id="tok">${esc(tok)}</code>
     <p class="note">${foot}</p>
     ${onBack?'<button class="btn block" id="again">直す</button>':''}</div>`;
-  const text='ShiftNestの回答です。師長のアプリで受け取ってください。\n'+link+'\n\n（開けないときは次の文字をアプリに貼り付け）\n'+tok;
+  const text='ShiftNestの回答です。管理者のアプリで受け取ってください。\n'+link+'\n\n（開けないときは次の文字をアプリに貼り付け）\n'+tok;
   $('#share').onclick=async()=>{if(navigator.share){try{await navigator.share({text});}catch(e){}}else{location.href='mailto:?subject='+encodeURIComponent('勤務の希望（ShiftNest）')+'&body='+encodeURIComponent(text);}};
   $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(text);toast('コピーしました');}catch(e){const r=document.createRange();r.selectNodeContents($('#tok'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('選択しました。コピーしてください');}};
   if(onBack)$('#again').onclick=onBack;
@@ -184,14 +184,14 @@ function renderReq(){
       <div class="row"><button class="btn primary" id="yes" style="flex:1">入れる</button><button class="btn" id="no" style="flex:1">むり</button></div></div>`;
     const answer=async ok=>{S.token=await SNCodec.sealToPub(inv.k,{t:'req-ok',ym:inv.ym,id:S.id,d:S.req.d,ok});
       if(!ok){app.innerHTML=head+'<div class="card"><h2>わかりました</h2><p class="note">返事は送らなくて大丈夫です。</p></div>';return;}
-      renderSend(head,'ありがとうございます','師長がアプリで受け取ると、勤務表が作り直されます。何人かがOKした場合は、アプリが1人を選びます。',null);};
+      renderSend(head,'ありがとうございます','管理者がアプリに取り込み、勤務表を更新すると反映されます。何人かがOKした場合は、アプリが1人を選びます。',null);};
     $('#yes').onclick=()=>answer(true);$('#no').onclick=()=>answer(false);
   }
 }
 function render(){
   if(S.kind==='invite')return renderInvite();
   if(S.kind==='req')return renderReq();
-  $('#app').innerHTML=`<div class="card"><h1>ShiftNest</h1><p>病棟に貼ってある招待QRコードから開いてください。</p><p class="note">このページは看護師の勤務の希望を入力するためのものです。</p></div>`;
+  $('#app').innerHTML=`<div class="card"><h1>ShiftNest</h1><p>職場に貼ってある招待QRコードから開いてください。</p><p class="note">このページはスタッフの勤務の希望を入力するためのものです。</p></div>`;
 }
 parseHash();if(S.kind==='invite')setupInvite();render();
 window.addEventListener('hashchange',()=>{parseHash();if(S.kind==='invite')setupInvite();S.reqStep=null;render();});
