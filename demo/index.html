@@ -219,7 +219,7 @@ $('#pcReload').onclick=()=>{$('#pcFrame').src=LINKS.pc.replace('#','?r='+Date.no
 const NAMES=['佐藤','鈴木','高橋','田中','伊藤','渡辺','山本','中村','小林','加藤','吉田','山田','佐々木','山口','松本','井上','木村','林','斎藤','清水','山崎','森','池田','橋本','阿部','石川','石田'];
 const M={pass:'さくら',auto:true,sentMail:null,sentLine:null,sentRemind:null,
   must:[{n:'鈴木',d:'12/10',s:'業務で日勤',r:'感染対策委員会',st:'pend'},{n:'伊藤',d:'12/17',s:'業務で夜勤',r:'院内研修の講師',st:'ok'},{n:'山口',d:'12/21',s:'業務で日勤',r:'外来応援',st:'pend'}],
-  leave:[{n:'山本',d:'12/28',st:'pend'}],answered:21,imported:0,screen:'home',phase:'collecting',alt:0,replies:0};
+  leave:[{n:'山本',d:'12/28',st:'pend'}],answered:21,imported:0,screen:'home',phase:'collecting',alt:0,replies:0,rules:{akeOff:false,nightRun:2,dayNight:true,consec:5,maxN:9},extra:[],addOpen:false,learned:false,person:{nMin:3,nMax:5,dMax:null,agreed:true}};
 const missing=['松本','林','清水','阿部','石川','石田'];
 const noMail=['井上','林','石川'];
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200);}
@@ -231,6 +231,8 @@ const now=()=>{const d=new Date();return (d.getMonth()+1)+'/'+d.getDate()+' '+d.
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function qr(text){try{const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:3,margin:2,scalable:true});}catch(e){return '';}}
 const EXPLAIN={
+ rules:`<h2>ルールは「決まっているもの」と「職場で変えるもの」に分ける</h2><p><b>変えられないルール</b>（夜勤の次は明け、夜勤からそのまま日勤はしない）は鍵マークで固定。</p><p><b>はじめから入っているルール</b>はスイッチと＋−だけで変えられます。例：「明けの次の日は休み」をオフ、「夜勤→明けは2回まで（3回続けない）」。</p><p><b>追加ルール</b>は、よくある例から選んで足すだけ。自由に書く欄は作らず、迷わないようにします。</p><p><b>過去の勤務表から提案</b>：取り込んだ過去の表を調べて「明けの次の日に夜勤が14回あった→オフが合っています」のように提案します。</p>`,
+ person:`<h2>この人だけの回数</h2><p>管理者がスタッフと相談して決めた回数（例：夜勤は3〜5回、日勤は◯回まで）を、その人だけに設定できます。</p><p>本人の入力画面には出ません。「なし」なら職場のルールどおりです。</p>`,
  home:`<h2>ホーム：いま何をすればいいかが1画面でわかる</h2><p>日付と「締切まであと何日」、いまの状態（希望を集めています → 勤務表を作る → 確定）が上に出ます。大きなボタンは状態に合わせて1つだけ変わります。</p>
   <div class="btnrow" id="phaseBtns">${[['collecting','集めている'],['ready','そろった'],['built','できた'],['cannot','組めない'],['asking','調整中'],['confirmed','確定']].map(([k,t])=>`<button class="btn" data-ph="${k}" aria-pressed="${M.phase===k}">${t}</button>`).join('')}</div>
   <p class="note">↑ 見本の状態を切り替えられます。ボタンを押しても次の状態に進みます。</p>`,
@@ -275,7 +277,8 @@ function render(){
       <div class="cell" data-go="staff" style="padding-left:0;cursor:pointer"><span class="ico">👥</span><span class="grow">スタッフ一覧（グループ別）</span><span class="val">27人</span><span class="chev">›</span></div>
       <div class="cell" style="padding-left:0"><span class="ico">➕</span><span class="grow">スタッフを追加</span><span class="chev">›</span></div>
       <div class="cell" style="padding-left:0"><span class="ico">📁</span><span class="grow">保存した勤務表</span><span class="val">3か月分</span><span class="chev">›</span></div>
-      <div class="cell" style="padding-left:0"><span class="ico">⚙︎</span><span class="grow">細かい設定（人数・区分・ルール）</span><span class="chev">›</span></div>
+      <div class="cell" style="padding-left:0;cursor:pointer" data-go="rules"><span class="ico">⚙︎</span><span class="grow">勤務の並びのルール</span><span class="chev">›</span></div>
+      <div class="cell" style="padding-left:0"><span class="ico">⚙︎</span><span class="grow">細かい設定（人数・区分）</span><span class="chev">›</span></div>
     </div></div>
     ${ph==='built'||ph==='confirmed'?`<div class="ghead">案を選ぶ（希望が多く通った順）</div><div class="grp"><div class="cells" style="padding:10px">
       <div style="display:flex;background:rgba(120,120,128,.14);border-radius:9px;padding:2px">${DEMO.alts.map((_,i)=>i).map(i=>`<button data-alt="${i}" style="flex:1;border:0;border-radius:7px;padding:6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;${M.alt===i?'background:var(--ios-cell);box-shadow:0 1px 3px rgba(0,0,0,.15)':'background:transparent;color:var(--ink)'}">案${i+1}</button>`).join('')}</div>
@@ -325,6 +328,50 @@ function render(){
     <div class="gfoot">保存済みの勤務表は書き換えません。</div>
     <div class="ghead">1人ずつ取り込む</div><div class="grp"><div class="cells"><div class="cell"><span class="sub">リンク：届いた回答リンクをこのiPhoneで押すと、その場で取り込みます。</span></div><div class="cell link"><span class="ico">⌗</span><span class="grow">スタッフの回答QRを読み取る</span></div></div></div><div style="height:20px"></div>`;
   }
+  if(s==='rules'){
+    const R=M.rules,sw=(k)=>`<span class="sw ${R[k]?'':'off'}" data-sw="${k}"></span>`,st=(k,min,max)=>`<span style="display:inline-flex;align-items:center;gap:6px"><button class="ibtn" data-st="${k}" data-d="-1" data-min="${min}" data-max="${max}">−</button><b style="min-width:18px;text-align:center">${R[k]}</b><button class="ibtn" data-st="${k}" data-d="1" data-min="${min}" data-max="${max}">＋</button></span>`;
+    h=`<div class="nav"><span class="back" data-go="home" style="cursor:pointer">‹ ホーム</span><h4>勤務の並びのルール</h4></div>
+    <div class="ghead">勤務の形</div><div class="grp"><div class="cells"><div class="cell"><span class="grow">2交代（日勤・夜勤）</span><span style="color:var(--ios-blue)">✓</span></div><div class="cell" style="color:var(--ios-sub)"><span class="grow">3交代（日勤・準夜・深夜）</span></div></div></div>
+    <div class="ghead">決まっているルール（変えられません）</div><div class="grp"><div class="cells">
+      <div class="cell"><span class="grow">夜勤の次の日は「明け」</span><span class="cap">🔒</span></div>
+      <div class="cell"><span class="grow">明けの日に日勤（夜勤からそのまま日勤）はしない</span><span class="cap">🔒</span></div>
+    </div></div>
+    <div class="ghead">はじめから入っているルール（職場に合わせて変えられます）</div><div class="grp"><div class="cells">
+      <div class="cell"><span class="grow">明けの次の日は休みにする<div class="sub">${R.akeOff?'明けの次の日は必ず休み':'オフ：明けの次の日は日勤・夜勤も入れます'}</div></span>${sw('akeOff')}</div>
+      <div class="cell"><span class="grow">「夜勤→明け」を続けるのは<div class="sub">${R.nightRun+1}回続けてはいけない（${R.nightRun}回まで）</div></span>${st('nightRun',1,4)}</div>
+      <div class="cell"><span class="grow">日勤の次の日に夜勤<div class="sub">${R.dayNight?'OK':'入れない'}</div></span>${sw('dayNight')}</div>
+      <div class="cell"><span class="grow">続けて働けるのは<div class="sub">${R.consec}日まで（明けは数えない）</div></span>${st('consec',3,7)}</div>
+      <div class="cell"><span class="grow">夜勤は1人 月<div class="sub">${R.maxN}回まで（月平均72時間を超えないように）</div></span>${st('maxN',4,12)}</div>
+    </div></div>
+    <div class="ghead">追加したルール</div><div class="grp"><div class="cells">
+      ${M.extra.length?M.extra.map((e,i)=>`<div class="cell"><span class="grow">${e}</span><button class="ibtn" data-delx="${i}">削除</button></div>`).join(''):'<div class="cell"><span class="sub">まだありません</span></div>'}
+      <div class="cell link" id="addRule"><span class="ico">＋</span><span class="grow">ルールを追加（よくある例から選ぶ）</span></div>
+      ${M.addOpen?['夜勤の前の日は休みにする','明けの次の日は日勤にしない','土日の夜勤は月2回まで','夜勤の間は3日以上あける'].filter(t=>!M.extra.includes(t)).map(t=>`<div class="cell link" data-addx="${t}" style="padding-left:40px"><span class="grow">${t}</span><span class="cap">追加</span></div>`).join(''):''}
+    </div></div>
+    <div class="ghead">過去の勤務表から見つける</div><div class="grp"><div class="cells">
+      <div class="cell link" id="learn"><span class="ico">🔍</span><span class="grow">過去の勤務表（写真・Excel）からルールを提案してもらう</span></div>
+      ${M.learned?`<div class="cell" style="flex-direction:column;align-items:stretch;gap:6px"><b style="font-size:13px">3か月分を調べました</b>
+        <div class="sub">・明けの次の日に夜勤が入っていた日が14回 → 「明けの次の日は休み」はオフが合っています</div>
+        <div class="sub">・「夜勤→明け」が3回続いた例は0回（2回までは9回）→「2回まで」が合っています</div>
+        <div class="sub">・日勤の次の日に夜勤が21回 → 「日勤の次の日に夜勤」はOKが合っています</div>
+        <button class="ibtn fill" id="applyLearn">この内容にそろえる</button></div>`:''}
+    </div></div>
+    <div class="gfoot">ルールは職場ごとに保存されます。変えたあとは「勤務表を作り直す」で反映されます。</div><div style="height:20px"></div>`;
+  }
+  if(s==='person'){
+    const P=M.person;
+    const st=(k)=>`<span style="display:inline-flex;align-items:center;gap:6px"><button class="ibtn" data-pst="${k}" data-d="-1">−</button><b style="min-width:30px;text-align:center">${P[k]===null?'なし':P[k]}</b><button class="ibtn" data-pst="${k}" data-d="1">＋</button></span>`;
+    h=`<div class="nav"><span class="back" data-go="staff" style="cursor:pointer">‹ スタッフ</span><h4>佐藤</h4></div>
+    <div class="ghead">基本</div><div class="grp"><div class="cells"><div class="cell"><span class="grow">区分</span><span class="val">A1 担当A・ベテラン</span></div><div class="cell"><span class="grow">勤務タイプ</span><span class="val">通常（日勤・夜勤）</span></div></div></div>
+    <div class="gfoot">区分は管理者だけが決めます。本人には表示されません。</div>
+    <div class="ghead">この人だけの回数（本人と相談して決めたとき）</div><div class="grp"><div class="cells">
+      <div class="cell"><span class="grow">夜勤 いちばん少なくて</span>${st('nMin')}</div>
+      <div class="cell"><span class="grow">夜勤 いちばん多くて</span>${st('nMax')}</div>
+      <div class="cell"><span class="grow">日勤 いちばん多くて</span>${st('dMax')}</div>
+      <div class="cell"><span class="grow">本人と合意済み</span><span class="sw ${P.agreed?'':'off'}" id="agreed"></span></div>
+    </div></div>
+    <div class="gfoot">「なし」は職場のルールどおり。ここで決めた回数はこの人の月ごとの勤務に使います（例：夜勤 3〜5回）。本人には表示されません。</div><div style="height:20px"></div>`;
+  }
   if(s==='staff'){
     const pend=M.must.filter(x=>x.st==='pend').length+M.leave.filter(x=>x.st==='pend').length;
     h=`<div class="nav"><h3>スタッフ</h3></div>
@@ -336,7 +383,7 @@ function render(){
     <div class="ghead">有休の申請</div><div class="grp"><div class="cells">
     ${M.leave.map((x,i)=>`<div class="cell"><b>${x.n}</b><span class="sub grow">${x.d}</span>${x.st==='pend'?`<button class="ibtn" data-leave="${i}" data-v="ng">却下</button><button class="ibtn fill" data-leave="${i}" data-v="ok">承認</button>`:`<span class="st ${x.st}">${x.st==='ok'?'承認済み':'却下'}</span>`}</div>`).join('')}
     </div></div>
-    <div class="ghead">A1 担当A・ベテラン（3人）</div><div class="grp"><div class="cells">${['佐藤','鈴木','高橋'].map(n=>`<div class="cell"><span class="pill">A1</span><span class="grow">${n}</span><span class="chev">›</span></div>`).join('')}</div></div>
+    <div class="ghead">A1 担当A・ベテラン（3人）</div><div class="grp"><div class="cells">${['佐藤','鈴木','高橋'].map(n=>`<div class="cell" ${n==='佐藤'?'data-go="person" style="cursor:pointer"':''}><span class="pill">A1</span><span class="grow">${n}</span><span class="chev">›</span></div>`).join('')}</div></div>
     <div class="ghead">C 担当B・新人（8人）</div><div class="grp"><div class="cells">${['清水','山崎','森'].map((n,i)=>`<div class="cell"><span class="pill">C</span><span class="grow">${n}${i===2?' <span class="cap">夜勤なし期間</span>':''}</span><span class="chev">›</span></div>`).join('')}<div class="cell"><span class="cap">ほか5人…</span></div></div></div><div style="height:20px"></div>`;
   }
   el.innerHTML=h;el.scrollTop=0;bind();
@@ -373,6 +420,14 @@ function bind(){
   const bk=$('#bulk');if(bk)bk.onclick=doImp;
   const ps=$('#paste');if(ps)ps.onclick=doImp;
   document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{M.screen=b.dataset.go;render();});
+  document.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{M.rules[b.dataset.sw]=!M.rules[b.dataset.sw];render();});
+  document.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{const k=b.dataset.st;M.rules[k]=Math.max(+b.dataset.min,Math.min(+b.dataset.max,M.rules[k]+(+b.dataset.d)));render();});
+  {const ar=$('#addRule');if(ar)ar.onclick=()=>{M.addOpen=!M.addOpen;render();};}
+  document.querySelectorAll('[data-addx]').forEach(b=>b.onclick=()=>{M.extra.push(b.dataset.addx);M.addOpen=false;render();});
+  document.querySelectorAll('[data-delx]').forEach(b=>b.onclick=()=>{M.extra.splice(+b.dataset.delx,1);render();});
+  {const ln=$('#learn');if(ln)ln.onclick=()=>{M.learned=true;render();};const al=$('#applyLearn');if(al)al.onclick=()=>{Object.assign(M.rules,{akeOff:false,nightRun:2,dayNight:true});toast('過去の勤務表に合わせました');render();};}
+  document.querySelectorAll('[data-pst]').forEach(b=>b.onclick=()=>{const k=b.dataset.pst,P=M.person;let v=P[k]===null?(b.dataset.d>0?1:null):P[k]+(+b.dataset.d);if(v!==null&&v<1)v=null;if(v!==null&&v>20)v=20;P[k]=v;render();});
+  {const ag=$('#agreed');if(ag)ag.onclick=()=>{M.person.agreed=!M.person.agreed;render();};}
   document.querySelectorAll('[data-must]').forEach(b=>b.onclick=()=>{M.must[+b.dataset.must].st=b.dataset.v;toast(M.auto?'届いた希望で勤務表を作り直しています':'変更しました');render();});
   document.querySelectorAll('[data-leave]').forEach(b=>b.onclick=()=>{M.leave[+b.dataset.leave].st=b.dataset.v;render();});
 }
