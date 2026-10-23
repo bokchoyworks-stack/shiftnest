@@ -104,7 +104,8 @@ function renderInvite(){
       <p class="note">合言葉は、あとで管理者から「お願い」が届いたときに、あなただけが読むために使います。どこにも送られません。</p>
       <label class="f" for="em">連絡用メール（任意）</label>
       <input type="email" id="em" autocomplete="email" placeholder="例：name@example.com" value="${esc(S.em||'')}">
-      <p class="note">入れておくと、次の月から案内がメールで届きます。LINEで受け取る人は空欄でかまいません。アドレスは管理者のiPhoneにだけ保存されます。</p>
+      <label class="note" style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" id="emok" ${S.em?'checked':''} style="margin-top:4px"> このアドレスを職場の管理者に渡し、勤務の案内メールに使うことに同意します（入れた人だけ）</label>
+      <p class="note">入れておくと、次の月から案内がメールで届きます。LINEで受け取る人は空欄でかまいません。アドレスは管理者のiPhoneにだけ保存され、アプリの開発者には届きません。</p>
       <button class="btn primary block" id="next1">次へ</button></div>`;
     $('#who').onchange=e=>{$('#newBox').hidden=e.target.value!=='new';};
     $('#next1').onclick=()=>{const v=$('#who').value;const pin=$('#pin').value.trim();
@@ -112,7 +113,7 @@ function renderInvite(){
       if(v==='new'){const n=$('#nm').value.trim();if(!n){toast('名前を入れてください');return;}S.id=0;S.name=n;}
       else{S.id=+v;S.name=(inv.s.find(x=>x[0]===S.id)||[0,''])[1];}
       if(!/^\d{4}$/.test(pin)){toast('合言葉は数字4けたです');return;}
-      S.em=($('#em').value||'').trim();if(S.em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.em)){toast('メールアドレスを確認してください');return;}store.set('sn-em',S.em);
+      S.em=($('#em').value||'').trim();if(S.em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.em)){toast('メールアドレスを確認してください');return;}if(S.em&&!$('#emok').checked){toast('メールを使うときは同意にチェックしてください');return;}store.set('sn-em',S.em);
       S.pin=pin;S.step='cal';saveDraft();render();window.scrollTo(0,0);};
     return;
   }
@@ -132,7 +133,8 @@ function renderInvite(){
       <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">管理者にも見えません</span> アプリの中だけで使います。</p>
       <div class="chips">${(inv.s||[]).filter(([id])=>id!==S.id).map(([id,n])=>`<button data-ng="${id}" aria-pressed="${S.ng.includes(id)}">${esc(n)}</button>`).join('')}</div></div>
       <button class="btn primary block" id="send">管理者に送る</button>
-      <button class="btn block" id="back">名前・合言葉からやり直す</button>`;
+      <button class="btn block" id="back">名前・合言葉からやり直す</button>
+      <p class="note">入力した内容は暗号化され、職場の管理者のiPhoneでだけ開けます。アプリの開発者には一切届きません。<a href="../privacy/">プライバシーについて</a></p>`;
     app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render();});
     app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=+b.dataset.d,day=S.days[i].day;
       if(S.mode==='leave'){const k=S.lv.indexOf(day);if(k>=0)S.lv.splice(k,1);else S.lv.push(day);}
@@ -169,6 +171,7 @@ function renderSend(head,title,foot,onBack){
     <div class="box info"><b>B. メール・メッセージで送る</b></div>
     <div class="row" style="margin:8px 0 12px"><button class="btn" id="share">送る（メール・LINEなど）</button><button class="btn" id="copy">コピー</button></div>
     <code class="tok" id="tok">${esc(tok)}</code>
+    <p class="note">管理者から「提出用のLINEグループ」に送るよう言われている場合は、そこに送ってください。管理者が全員分をまとめて取り込めます。中身は暗号化されていて、グループのほかの人には読めません。</p>
     <p class="note">${foot}</p>
     ${onBack?'<button class="btn block" id="again">直す</button>':''}</div>`;
   const text='ShiftNestの回答です。管理者のアプリで受け取ってください。\n'+link+'\n\n（開けないときは次の文字をアプリに貼り付け）\n'+tok;
