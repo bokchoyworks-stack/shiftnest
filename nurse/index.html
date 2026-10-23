@@ -83,12 +83,14 @@ const store={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){ret
 function setupInvite(){
   const inv=S.inv,[y,m]=inv.ym.split('-').map(Number);
   S.days=monthDays(y,m-1,!!inv.ye);
-  const draft=store.get('sn-draft-'+inv.ym+'-'+inv.w)||{};
+  const draft=store.get(draftKey())||{};
   S.step=draft.step&&draft.step!=='done'?draft.step:'who';
   S.id=draft.id||0;S.name=draft.name||'';S.p=draft.p||new Array(S.days.length).fill(0);
   S.lv=draft.lv||[];S.ng=draft.ng||[];S.pv=draft.pv||[-1,-1];S.em=store.get('sn-em')||'';S.mode='pref';S.pin='';
 }
-function saveDraft(){store.set('sn-draft-'+S.inv.ym+'-'+S.inv.w,{step:S.step,id:S.id,name:S.name,p:S.p,lv:S.lv,ng:S.ng,pv:S.pv});}
+/* 下書きは「職場（管理者の鍵）×月」ごとに分ける。同じ職場名の別施設と混ざらない */
+function draftKey(){return 'sn-draft-'+S.inv.ym+'-'+String(S.inv.k||S.inv.w).slice(-24);}
+function saveDraft(){store.set(draftKey(),{step:S.step,id:S.id,name:S.name,p:S.p,lv:S.lv,ng:S.ng,pv:S.pv});}
 function fixedDays(){return new Set(((S.inv.fx||{})[S.id]||[]).map(Number));}
 function hasStar(){return (S.inv.cr||[]).includes(S.id);}
 function renderInvite(){
