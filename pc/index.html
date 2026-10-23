@@ -606,7 +606,8 @@ function mrRule(){return state.combo.find(r=>r.type==='min'&&r.must&&r.g.length)
 function buildCfg(){
   const days=getDays(),D=days.length,bo=baseOff(),{inM}=rosterInfo();
   const ids=inM.map(x=>x.st.id);
-  const prefs=inM.map(({st})=>prefsFor(st.id).slice());
+  const MR=((state.extra||{}).mustReq)||[];
+  const prefs=inM.map(({st})=>prefsFor(st.id).slice().map((q,d)=>q>=9&&!MR.some(r=>r.id===st.id&&r.date===dkey(state.ym,days[d].day)&&r.status==='ok')?q-4:q));
   if(state.scenario){
     const d=Math.min(20,D-1),mr=mrRule();
     const A=inM.map((x,i)=>i).filter(i=>mr&&mr.g.includes(inM[i].st.gi)&&inM[i].st.night&&!inM[i].f[d]);
