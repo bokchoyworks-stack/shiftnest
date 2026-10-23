@@ -273,7 +273,7 @@ function render(){
     ${ph==='built'||ph==='confirmed'?`<div class="ghead">案を選ぶ（希望が多く通った順）</div><div class="grp"><div class="cells" style="padding:10px">
       <div style="display:flex;background:rgba(120,120,128,.14);border-radius:9px;padding:2px">${[0,1,2].map(i=>`<button data-alt="${i}" style="flex:1;border:0;border-radius:7px;padding:6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;${M.alt===i?'background:var(--ios-cell);box-shadow:0 1px 3px rgba(0,0,0,.15)':'background:transparent;color:var(--ink)'}">案${i+1}</button>`).join('')}</div>
       <div class="cap" style="margin:8px 2px">${alt[M.alt]}</div>
-      <div style="overflow-x:auto">${miniTable()}</div>
+      <div class="cap" style="margin:0 2px 4px">27人全員分の表です（見本では一部だけ表示）</div><div style="overflow-x:auto">${miniTable()}</div><div class="cap" style="margin:4px 2px 0">… ほか22人</div>
       ${ph==='built'?`<button class="ibtn fill" style="width:100%;margin-top:10px;padding:10px" id="confirm">✓ この案で確定して保存</button>`:'<div class="cap" style="margin-top:8px;color:var(--ok);font-weight:700">✓ 確定済み（翌月に引き継ぎます）</div>'}
     </div></div>
     <div class="kpis" style="margin-top:8px"><div class="kpi ok"><b>100%</b><span>× 希望休</span></div><div class="kpi ok"><b>3/3</b><span>業務がある日</span></div><div class="kpi"><b>${[9,8,7][M.alt]}/11</b><span>日勤・夜勤の希望</span></div><div class="kpi"><b>68.5h</b><span>月平均夜勤（72h以内）</span></div></div>`:''}
@@ -313,7 +313,7 @@ function render(){
       <div class="cell"><span class="sub">3. 全員分が一度に取り込まれます。同じ人が何回も送っていたら、いちばん新しい回答を使います。</span></div>
       <div class="cell link" id="bulk"><span class="ico">📄</span><span class="grow">保存したファイルからまとめて取り込む</span></div>
       <div class="cell link" id="paste"><span class="ico">📋</span><span class="grow">ペースト</span></div>
-      ${M.imported?`<div class="cell" style="color:var(--ok);font-weight:700">${M.imported}件の回答を取り込みました</div>`:''}</div></div>
+      ${M.imported?`<div class="cell" style="color:var(--ok);font-weight:700;font-size:13px">27人分を読み込みました。新しく6人分（前から届いていた21人は最新の内容に更新）。いま 27/27人・全員そろいました</div>`:''}</div></div>
     <div class="ghead">勤務表に反映</div><div class="grp"><div class="cells"><div class="cell link bold" data-go="home"><span class="ico">✦</span><span class="grow">取り込んだ希望で勤務表を更新</span></div></div></div>
     <div class="gfoot">保存済みの勤務表は書き換えません。</div>
     <div class="ghead">1人ずつ取り込む</div><div class="grp"><div class="cells"><div class="cell"><span class="sub">リンク：届いた回答リンクをこのiPhoneで押すと、その場で取り込みます。</span></div><div class="cell link"><span class="ico">⌗</span><span class="grow">スタッフの回答QRを読み取る</span></div></div></div><div style="height:20px"></div>`;
@@ -357,8 +357,9 @@ function bind(){
   const sl=$('#sendLine');if(sl)sl.onclick=()=>ask('LINEなどで送りますか？','次の画面で送り先（職場のLINEグループなど）を選びます。'+(M.sentLine?`\n※ ${M.sentLine} にも送っています。`:''),()=>{M.sentLine=now();toast('（見本）共有シートが開きます');render();});
   const rm=$('#remind');if(rm)rm.onclick=()=>ask('メールを送りますか？','4人にBCCで送ります。'+(M.sentRemind?`\n※ ${M.sentRemind} にも送っています。`:''),()=>{M.sentRemind=now();toast('（見本）催促メールの作成画面が開きます');render();});
   const rl=$('#remindLine');if(rl)rl.onclick=()=>ask('LINEなどで送りますか？','次の画面で送り先を選びます。',()=>toast('（見本）共有シートが開きます'));
-  const bk=$('#bulk');if(bk)bk.onclick=()=>{M.imported=6;M.answered=27;toast('6件の回答を取り込みました');render();};
-  const ps=$('#paste');if(ps)ps.onclick=()=>{M.imported=6;M.answered=27;toast('6件の回答を取り込みました');render();};
+  const doImp=()=>{M.imported=27;M.answered=27;if(M.phase==='collecting')M.phase='ready';toast('27人分を読み込みました（全員そろいました）');render();};
+  const bk=$('#bulk');if(bk)bk.onclick=doImp;
+  const ps=$('#paste');if(ps)ps.onclick=doImp;
   document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{M.screen=b.dataset.go;render();});
   document.querySelectorAll('[data-must]').forEach(b=>b.onclick=()=>{M.must[+b.dataset.must].st=b.dataset.v;toast(M.auto?'届いた希望で勤務表を作り直しています':'変更しました');render();});
   document.querySelectorAll('[data-leave]').forEach(b=>b.onclick=()=>{M.leave[+b.dataset.leave].st=b.dataset.v;render();});
