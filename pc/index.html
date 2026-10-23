@@ -621,7 +621,7 @@ function buildCfg(){
   const ban=inM.map(({st})=>{const kd=kindOf(st),a=new Uint8Array(D);
     const base=kd==='day'?NB:kd==='night'?(1<<DAY):kd==='eve'?((1<<DAY)|(1<<NIG)):kd==='nig'?((1<<DAY)|(1<<EVE)):0;
     days.forEach((dd,i)=>{const k=dkey(state.ym,dd.day);let b=base;if(st.events.some(e=>e.type==='nightoff'&&k>=e.from&&k<=(e.to||e.from)))b|=NB;a[i]=b;});return a;});
-  staff.forEach((x,i)=>{const kd=kindOf(inM[i].st);x.kind=kd;x.dv=(kd==='all'||kd==='day')?(inM[i].st.dv||0):0;x.night=!ban[i].every(b=>(b&NB)===NB);});
+  staff.forEach((x,i)=>{const kd=kindOf(inM[i].st),st0=inM[i].st;x.nMin=st0.nMin||0;x.nMax=st0.nMax??null;x.dMax=st0.dMax??null;x.kind=kd;x.dv=(kd==='all'||kd==='day')?(inM[i].st.dv||0):0;x.night=!ban[i].every(b=>(b&NB)===NB);});
   return {cfg:{ban,mode:state.mode,days,staff,prefs,ng,prev:prevFor(inM),req:state.req[state.mode],rules:state.rules,groups:state.groups,combo:state.combo,fixed:inM.map(x=>x.f)},ids};
 }
 function changed(){state.result=null;saveLocal();}
@@ -799,6 +799,13 @@ function renderSummary(){
 }
 
 /* ---------- 1 setup ---------- */
+function limEditor(st){
+  const one=(k,lb)=>`<span class="note">${lb}</span><div class="step"><button data-lim="${st.id}.${k}" data-d="-1">−</button><span>${st[k]==null?'なし':st[k]}</span><button data-lim="${st.id}.${k}" data-d="1">＋</button></div>`;
+  return `<div class="ev-box" style="margin-top:8px"><div class="lbl">この人だけの回数（本人と相談して決めたとき・本人には表示されません）</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">${one('nMin','夜勤 最少')}${one('nMax','夜勤 最多')}${one('dMax','日勤 最多')}
+    <label class="note" style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-lagree="${st.id}" ${st.limitAgreed?'checked':''}>本人と合意済み</label></div>
+    <p class="note" style="margin:4px 0 0">「なし」は職場のルールどおり。</p></div>`;
+}
 function stepper(key,val){return '<div class="step"><button data-step="'+key+'" data-d="-1" aria-label="減らす">−</button><span>'+val+'</span><button data-step="'+key+'" data-d="1" aria-label="増やす">＋</button></div>';}
 function sw(key,on,label){return '<button class="sw" role="switch" aria-checked="'+on+'" data-sw="'+key+'" aria-label="'+esc(label)+'"></button>';}
 function ruleRow(r,i){
@@ -882,7 +889,7 @@ function renderSetup(){
         <div class="sr-main"><button class="gp g${gfam(st.gi)}" data-grp="${st.id}" aria-label="${esc(st.name)}の区分">${esc(gcode(st.gi))}</button><span class="nm">${esc(st.name)}</span>
           ${bd.map(([k,t])=>`<span class="bdg bdg-${k}">${t}</span>`).join('')}</div>
         <div class="sr-ctl"><span class="note">週休</span>${stepper('off.'+st.id,bo+st.offAdj)}<span class="note">勤務</span><button class="kind k-${kindOf(st)}" data-kind="${st.id}" aria-label="${esc(st.name)}の勤務タイプ（タップで変更）">${KIND[kindOf(st)]}</button>${kindOf(st)==='all'||kindOf(st)==='day'?`<span class="note">時間</span><button class="kind dvb dv${st.dv||0}" data-dv="${st.id}" title="${DV_HINT[st.dv||0]}" aria-label="${esc(st.name)}の日勤の時間（タップで変更）">${DV[st.dv||0]}</button>`:''}<button class="btn sm ${open?'primary':''}" data-ev="${st.id}">${open?'閉じる':'予定'}</button></div>
-        ${open?evEditor(st):''}
+        ${open?evEditor(st)+limEditor(st):''}
       </div>`;}).join('')}
     </div>
     ${out.length?`<details class="outlist"><summary>今月いない人（${out.length}名）</summary>${out.map(st=>`<div class="srow"><div class="sr-main"><span class="gp g${gfam(st.gi)}">${esc(gcode(st.gi))}</span><span class="nm" style="color:var(--muted)">${esc(st.name)}</span><span class="bdg">${absentReason(st)}</span></div><div class="sr-ctl"><button class="btn sm" data-ev="${st.id}">予定</button></div>${state.openEv===st.id?evEditor(st):''}</div>`).join('')}</details>`:''}
@@ -940,6 +947,8 @@ function copyText(t,okMsg,box){
 $('#p-setup').addEventListener('click',e=>{
   const t=e.target;
   const g=t.closest('[data-goto]');if(g){e.preventDefault();setTab(g.dataset.goto);return;}
+  const lm=t.closest('[data-lim]');if(lm){const [id,k]=lm.dataset.lim.split('.');const s0=staffById(+id);let v=s0[k]==null?(+lm.dataset.d>0?1:null):s0[k]+(+lm.dataset.d);if(v!==null&&v<1)v=null;if(v!==null&&v>25)v=25;s0[k]=v;changed();renderSetup();return;}
+  const la=t.closest('[data-lagree]');if(la){const s0=staffById(+la.dataset.lagree);s0.limitAgreed=la.checked;changed();return;}
   const st=t.closest('[data-step]');
   if(st){
     const k=st.dataset.step,dv=+st.dataset.d,[a,b]=k.split('.');
@@ -1491,6 +1500,8 @@ function renderTable(){
   </div>
   <div class="out-row">
     <button class="btn" id="pdfBtn">印刷イメージ（PDF）を見る</button>
+    <button class="btn primary" id="cmBtn">電子カルテに書き写す（1人ずつ・1日ずつ）</button>
+    <button class="btn" id="csvBtn">CSVファイルで保存（Excel・USB用）</button>
     <button class="btn" id="copyBtn">Excelに貼る用にコピー</button>
     <span class="note">アプリ版では「共有」ボタンから PDF と Excel をメール・AirDrop・プリンター・コンビニ印刷へ。</span>
   </div>
@@ -1524,6 +1535,57 @@ $('#p-table').addEventListener('click',e=>{
   if(e.target.closest('#confirmBtn')){const sn=snapFromResult();delete sn.title;sn.savedAt=new Date().toLocaleDateString('ja-JP');state.history[state.ym]=sn;saveLocal();renderTable();toast(monthLabel(state.ym)+'を保存しました。翌月はここから引き継ぎます');return;}
   if(e.target.closest('#pdfBtn')){openPrint(snapFromResult());return;}
   if(e.target.closest('#copyBtn')){copyTSV();return;}
+  if(e.target.closest('#csvBtn')){downloadCSV();return;}
+  if(e.target.closest('#cmBtn')){state.cm=null;openCopyMode();return;}
+});
+/* ---------- 電子カルテへの書き写し（A：書き写しモード／B：CSVファイル） ---------- */
+function downloadCSV(){
+  const sn=snapFromResult(),q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const lines=[['名前','区分'].concat(sn.days.map(d=>sn.title.replace(/年|月/g,'/')+d.day),['休','夜勤']).map(q).join(',')];
+  sn.rows.forEach(r=>lines.push([r.name,r.code].concat(r.X.map((s,i)=>cellLabel(s,r.V&&r.V[i])),[r.off,r.nights]).map(q).join(',')));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='勤務表_'+state.ym+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast('CSVファイルを保存しました。使い終わったら消してください');
+}
+function copyModeHTML(){
+  const sn=snapFromResult(),cm=state.cm,rows=sn.rows,days=sn.days;
+  const lab=(s,v)=>cellLabel(s,v);
+  let body='';
+  if(cm.by==='person'){
+    const r=rows[cm.i];
+    body=`<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><span class="gp g${gfam(staffById(state.result.ids[cm.i]).gi)}">${esc(r.code)}</span><b style="font-size:30px">${esc(r.name)}</b><span class="note">${cm.i+1} / ${rows.length}人</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:12px">${days.map((d,i)=>`<div style="border:1px solid var(--line);border-radius:10px;padding:6px;text-align:center;${d.hol?'background:var(--hol-col)':''}"><div class="note" style="font-size:12px">${d.day}（${d.name?'祝':WD[d.dow]}）</div><div style="font-size:24px;font-weight:700"><span class="sh s${r.X[i]}">${lab(r.X[i],r.V&&r.V[i])}</span></div></div>`).join('')}</div>`;
+  }else{
+    const d=days[cm.i],groups=(state.mode==='3'?[[DAY,'日勤'],[EVE,'準夜'],[NIG,'深夜']]:[[DAY,'日勤'],[YAK,'夜勤'],[AKE,'明け']]).concat([[6,'有給'],[OFF,'休み']]);
+    body=`<div style="display:flex;align-items:baseline;gap:12px"><b style="font-size:30px">${monthLabel(state.ym).replace(/^\d+年/,'')}${d.day}日（${d.name?'祝':WD[d.dow]}）</b><span class="note">${cm.i+1} / ${days.length}日</span></div>
+    ${groups.map(([c,t])=>{const ns=rows.filter(r=>r.X[cm.i]===c);return ns.length?`<div style="margin-top:12px"><span class="sh s${c}">${t}</span> <b>${ns.length}人</b><div style="font-size:22px;margin-top:4px;line-height:1.6">${ns.map(r=>esc(r.name)+(c===DAY&&r.V&&r.V[cm.i]?`<small>（${VLABEL[r.V[cm.i]]}）</small>`:'')).join('　')}</div></div>`:'';}).join('')}`;
+  }
+  const n=cm.by==='person'?rows.length:days.length,done=cm.done[cm.by]||{};
+  return `<div id="cmBox" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:center;justify-content:center;padding:16px">
+   <div style="background:var(--surface);color:var(--ink);border-radius:18px;padding:18px;width:min(980px,100%);max-height:92vh;overflow:auto">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><b style="font-size:17px">電子カルテへの書き写し</b>
+      <div class="seg sm"><button data-cmby="person" aria-pressed="${cm.by==='person'}">1人ずつ</button><button data-cmby="day" aria-pressed="${cm.by==='day'}">1日ずつ</button></div>
+      <span class="note">入力し終わったら「入力済み」。抜けがひと目でわかります。</span><button class="btn sm" id="cmClose" style="margin-left:auto">閉じる</button></div>
+    ${body}
+    <div style="display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap">
+      <button class="btn" id="cmPrev" ${cm.i===0?'disabled':''}>← 前へ</button>
+      <button class="btn ${done[cm.i]?'':'primary'}" id="cmDone">${done[cm.i]?'✓ 入力済み（取り消す）':'入力済みにして次へ'}</button>
+      <button class="btn" id="cmNext" ${cm.i>=n-1?'disabled':''}>次へ →</button>
+      <span class="note">入力済み ${Object.keys(done).length} / ${n}</span></div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:10px">${Array.from({length:n},(_,i)=>`<button data-cmgo="${i}" style="min-width:30px;padding:3px 6px;border-radius:8px;border:1px solid var(--line);font:inherit;font-size:12px;cursor:pointer;${i===cm.i?'outline:2px solid var(--accent);':''}${done[i]?'background:var(--ok-soft);color:var(--ok)':'background:var(--surface)'}">${cm.by==='person'?esc(rows[i].name):days[i].day}</button>`).join('')}</div>
+   </div></div>`;
+}
+function openCopyMode(){if(!state.cm)state.cm={by:'person',i:0,done:{}};renderCopyMode();}
+function renderCopyMode(){const old=$('#cmBox');if(old)old.remove();document.body.insertAdjacentHTML('beforeend',copyModeHTML());}
+document.addEventListener('click',e=>{
+  if(!$('#cmBox')||!e.target.closest('#cmBox'))return;
+  const cm=state.cm,n=cm.by==='person'?state.result.ids.length:state.result.m.D;cm.done[cm.by]=cm.done[cm.by]||{};
+  if(e.target.id==='cmBox'||e.target.closest('#cmClose')){$('#cmBox').remove();return;}
+  const by=e.target.closest('[data-cmby]');if(by){cm.by=by.dataset.cmby;cm.i=0;renderCopyMode();return;}
+  const g=e.target.closest('[data-cmgo]');if(g){cm.i=+g.dataset.cmgo;renderCopyMode();return;}
+  if(e.target.closest('#cmPrev')){cm.i=Math.max(0,cm.i-1);renderCopyMode();return;}
+  if(e.target.closest('#cmNext')){cm.i=Math.min(n-1,cm.i+1);renderCopyMode();return;}
+  if(e.target.closest('#cmDone')){const d=cm.done[cm.by];if(d[cm.i])delete d[cm.i];else{d[cm.i]=1;cm.i=Math.min(n-1,cm.i+1);}renderCopyMode();return;}
 });
 function copyTSV(){
   const sn=snapFromResult();
@@ -1550,8 +1612,8 @@ function openPrint(sn){
 function renderRules(){
   const three=state.mode==='3';
   const codes=three?[DAY,EVE,NIG,OFF]:[DAY,YAK,AKE,OFF];
-  const A=allowedTable(state.mode);
-  const cell=(a,b)=>{if(!three&&a===YAK)return b===AKE?'<td class="must">必ず</td>':'<td class="ng">✕</td>';if(!three&&a===AKE)return b===OFF?'<td class="must">必ず</td>':'<td class="ng">✕</td>';if(!three&&b===AKE)return '<td class="ng">✕</td>';return A[a][b]?'<td class="ok">◯</td>':'<td class="ng">✕</td>';};
+  const A=allowedTable(state.mode,state.rules);
+  const cell=(a,b)=>{if(!three&&a===YAK)return b===AKE?'<td class="must">必ず</td>':'<td class="ng">✕</td>';if(!three&&a===AKE&&state.rules.akeOff!==false)return b===OFF?'<td class="must">必ず</td>':'<td class="ng">✕</td>';if(!three&&b===AKE)return '<td class="ng">✕</td>';return A[a][b]?'<td class="ok">◯</td>':'<td class="ng">✕</td>';};
   const pos=h=>((h-12)/30*100).toFixed(2)+'%';
   const w=(a,b)=>((b-a)/30*100).toFixed(2)+'%';
   $('#p-rules').innerHTML=`
@@ -1559,23 +1621,35 @@ function renderRules(){
     <div class="seg" id="ruleSeg" style="margin-left:auto"><button data-mode="3" aria-pressed="${three}">3交代</button><button data-mode="2" aria-pressed="${!three}">2交代</button></div></div>
   <div class="rules">
     <div class="card" style="grid-column:1/-1">
-      <p class="rule-big">やってはいけない並び（前の日 → 次の日）</p>
-      <p class="note" style="margin:0 0 12px">アプリはこの並びを絶対に作りません。月をまたぐときも、前月の最後の日から見ます。</p>
+      <p class="rule-big">勤務の並びのルール（前の日 → 次の日）</p>
+      <p class="note" style="margin:0 0 12px">アプリはここで「だめ」になっている並びを作りません。月をまたぐときも、前月の最後の日から見ます。</p>
+      <div class="lbl" style="margin:4px 0 6px">🔒 決まっているルール（休む時間を守るための基本。ふだんは変えません）</div>
       <div class="never">
-      ${three?`
-        <div class="it"><span class="sh s2">準夜</span><span class="arrow">→ 次の日</span><span class="sh s1">日勤</span><span class="x">✕ だめ</span>
-          <span class="why">準夜が終わるのは夜中、日勤は朝から。間に寝られるのは数時間だけです（下の図）。</span></div>
-        <div class="it"><span class="sh s3">深夜</span><span class="arrow">→ 次の日</span><span class="sh s1">日勤</span><span class="x">✕ だめ</span>
-          <span class="why">深夜明けの次の日に日勤は入れません。</span></div>
-        <div class="it"><span class="sh s2">準夜</span><span class="arrow">→ 次の日</span><span class="sh s3">深夜</span><span class="x">✕ だめ</span>
-          <span class="why">夜勤が続いてしまい、休む時間がとれません。</span></div>`:`
-        <div class="it"><span class="sh s4">夜勤</span><span class="arrow">→</span><span class="sh s5">明け</span><span class="arrow">→</span><span class="sh s0">休み</span><span class="x" style="color:var(--accent)">必ずこの形</span>
-          <span class="why">夜勤の次の日は自動で「明け」、その次の日は自動で休みになります。</span></div>
-        <div class="it"><span class="sh s1">日勤</span><span class="arrow">→ 次の日</span><span class="sh s4">夜勤</span><span class="x">✕ だめ</span>
-          <span class="why">夜勤の前の日に日勤は入れません。</span></div>
-        <div class="it"><span class="sh s4">夜勤</span><span class="arrow">→ 次の日</span><span class="sh s1">日勤</span><span class="x">✕ だめ</span>
-          <span class="why">夜勤の次の日は「明け」なので、日勤は入りません。</span></div>`}
+      ${three?[['unlockEveDay','s2','準夜','s1','日勤','準夜が終わるのは夜中、日勤は朝から。間に寝られるのは数時間だけです（下の図）。'],['unlockNigDay','s3','深夜','s1','日勤','深夜明けの次の日に日勤は入れません。'],['unlockEveNig','s2','準夜','s3','深夜','夜勤が続いてしまい、休む時間がとれません。']].map(([k,c1,t1,c2,t2,why])=>`
+        <div class="it"><span class="sh ${c1}">${t1}</span><span class="arrow">→ 次の日</span><span class="sh ${c2}">${t2}</span>${state.rules[k]?`<span class="x" style="color:var(--warn)">鍵を外しています（入ることがあります）</span><button class="btn sm" data-lock="${k}">鍵をかけ直す</button>`:`<span class="x">✕ だめ 🔒</span><button class="btn sm" data-unlock="${k}">鍵を外す…</button>`}
+          <span class="why">${why}</span></div>`).join(''):`
+        <div class="it"><span class="sh s4">夜勤</span><span class="arrow">→ 次の日</span><span class="sh s5">明け</span><span class="x" style="color:var(--accent)">必ずこの形 🔒</span>
+          <span class="why">夜勤の次の日は自動で「明け」になります。</span></div>
+        <div class="it"><span class="sh s4">夜勤</span><span class="arrow">→ そのまま</span><span class="sh s1">日勤</span><span class="x">✕ だめ 🔒</span>
+          <span class="why">明けの日に日勤は入りません。</span></div>`}
       </div>
+      <div class="lbl" style="margin:16px 0 6px">職場に合わせて変えるルール</div>
+      <div class="never">
+      ${three?'':`
+        <div class="it"><span class="sh s5">明け</span><span class="arrow">→ 次の日</span><span class="sh s0">休み</span>
+          <span class="x" style="color:var(--accent)">${state.rules.akeOff!==false?'必ず休み':'日勤・夜勤もOK'}</span>
+          <div class="seg sm"><button data-rset="akeOff" data-v="1" aria-pressed="${state.rules.akeOff!==false}">必ず休み</button><button data-rset="akeOff" data-v="0" aria-pressed="${state.rules.akeOff===false}">何でもOK</button></div>
+          <span class="why">「何でもOK」にすると、明けの次の日に日勤や夜勤も入ります。</span></div>
+        <div class="it"><span class="sh s4">夜勤</span><span class="arrow">→</span><span class="sh s5">明け</span><span class="arrow">を続けるのは</span>
+          <div class="step"><button data-rstep="nightRunMax" data-d="-1">−</button><span>${state.rules.nightRunMax??2}</span><button data-rstep="nightRunMax" data-d="1">＋</button></div><span class="note">回まで</span>
+          <span class="why">${(state.rules.nightRunMax??2)+1}回続けて「夜勤→明け」にはしません（明けの次が休みのときは関係ありません）。</span></div>
+        <div class="it"><span class="sh s1">日勤</span><span class="arrow">→ 次の日</span><span class="sh s4">夜勤</span>
+          <div class="seg sm"><button data-rset="dayToNight" data-v="1" aria-pressed="${state.rules.dayToNight!==false}">OK</button><button data-rset="dayToNight" data-v="0" aria-pressed="${state.rules.dayToNight===false}">だめ</button></div>
+          <span class="why">同じ日に日勤と夜勤を続けて入れることはありません（1日1マス）。</span></div>`}
+        <div class="it"><span class="arrow">続けて働けるのは</span><div class="step"><button data-rstep="maxConsec" data-d="-1">−</button><span>${state.rules.maxConsec}</span><button data-rstep="maxConsec" data-d="1">＋</button></div><span class="note">日まで</span></div>
+        <div class="it"><span class="arrow">夜勤は1人 月</span><div class="step"><button data-rstep="${three?'maxNights3':'maxNights2'}" data-d="-1">−</button><span>${three?state.rules.maxNights3:state.rules.maxNights2}</span><button data-rstep="${three?'maxNights3':'maxNights2'}" data-d="1">＋</button></div><span class="note">回まで（月平均72時間を超えないように）</span></div>
+      </div>
+      <p class="note" style="margin:10px 0 0">スタッフごとの回数（例：夜勤は3〜5回）は「準備」タブのスタッフの欄で、本人と相談して決めたときだけ設定します。</p>
       ${three?`
       <div class="tl" aria-label="準夜のあと日勤の時間の図">
         <p style="margin:16px 0 6px;font-weight:700">準夜 → 次の日 日勤 だと、こうなります</p>
@@ -1629,6 +1703,12 @@ ${state.combo.filter(r=>!r.must).map(r=>`        <li><span class="ic soft">◯</
     </div>
   </div>`;
 }
+$('#p-rules').addEventListener('click',e=>{
+  const u=e.target.closest('[data-unlock]');if(u){if(confirm('この鍵を外すと、休む時間が短い並びが入ることがあります。職場で決めたルールのときだけ外してください。外しますか？')){state.rules[u.dataset.unlock]=true;changed();renderRules();}return;}
+  const l=e.target.closest('[data-lock]');if(l){state.rules[l.dataset.lock]=false;changed();renderRules();return;}
+  const rs=e.target.closest('[data-rset]');if(rs){state.rules[rs.dataset.rset]=rs.dataset.v==='1';changed();renderRules();return;}
+  const rp=e.target.closest('[data-rstep]');if(rp){const k=rp.dataset.rstep,lim={nightRunMax:[1,6],maxConsec:[2,10],maxNights2:[1,12],maxNights3:[1,20]}[k];const cur=state.rules[k]??(k==='nightRunMax'?2:0);state.rules[k]=Math.max(lim[0],Math.min(lim[1],cur+(+rp.dataset.d)));changed();renderRules();return;}
+});
 $('#p-rules').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b){if(state.mode!==b.dataset.mode){state.mode=b.dataset.mode;state.result=null;state.accepted=[];}renderRules();}});
 
 document.addEventListener('click',e=>{const g=e.target.closest('[data-goto2]');if(g){setTab(g.dataset.goto2);window.scrollTo({top:0});}if(e.target.closest('#wlClose')){$('#welcome').hidden=true;try{localStorage.setItem('kinmu-wl','1');}catch(err){}}});
@@ -1639,7 +1719,7 @@ let idleLeft=IDLE_MIN*60,idleTimer=null,scanStop=null,cycleTimer=null;
 function exportData(){
   const prefs={};Object.keys(state.prefsByYm).forEach(ym=>{prefs[ym]={};Object.keys(state.prefsByYm[ym]).forEach(id=>{const a=state.prefsByYm[ym][id];if(a.some(Boolean))prefs[ym][id]=a;});});
   return Object.assign({},state.extra||{},{v:1,ward:state.ward,mode:state.mode,ym:state.ym,yearEnd:state.yearEnd,req:state.req,rules:state.rules,groups:state.groups,combo:state.combo,
-    staff:state.staff.map(s=>({id:s.id,name:s.name,gi:s.gi,kind:s.kind,dv:s.dv||0,offAdj:s.offAdj||0,events:s.events})),nextId:state.nextId,prefs,ng:state.ng,
+    staff:state.staff.map(s=>({id:s.id,name:s.name,gi:s.gi,kind:s.kind,dv:s.dv||0,offAdj:s.offAdj||0,events:s.events,nMin:s.nMin,nMax:s.nMax,dMax:s.dMax,limitAgreed:s.limitAgreed})),nextId:state.nextId,prefs,ng:state.ng,
     leaveReq:state.leaveReq,credits:state.credits,pending:state.pending,history:state.history,editedOnPC:new Date().toISOString()});
 }
 function importData(d){
@@ -1647,7 +1727,7 @@ function importData(d){
   const keep=['v','ward','mode','ym','yearEnd','req','rules','groups','combo','staff','nextId','prefs','ng','leaveReq','credits','pending','history'];
   state.extra={};Object.keys(d).forEach(k=>{if(!keep.includes(k))state.extra[k]=d[k];});
   ['ward','mode','ym','yearEnd','req','rules','groups','combo','nextId','ng','leaveReq','credits','pending','history'].forEach(k=>{if(d[k]!==undefined)state[k]=d[k];});
-  state.staff=d.staff.map(s=>({id:s.id,name:s.name,gi:s.gi||0,kind:s.kind||'all',night:(s.kind||'all')!=='day',dv:s.dv||0,offAdj:s.offAdj||0,events:s.events||[]}));
+  state.staff=d.staff.map(s=>({id:s.id,name:s.name,gi:s.gi||0,kind:s.kind||'all',night:(s.kind||'all')!=='day',dv:s.dv||0,offAdj:s.offAdj||0,events:s.events||[],nMin:s.nMin??null,nMax:s.nMax??null,dMax:s.dMax??null,limitAgreed:!!s.limitAgreed}));
   state.prefsByYm={};Object.keys(d.prefs||{}).forEach(ym=>{state.prefsByYm[ym]={};Object.keys(d.prefs[ym]).forEach(id=>{state.prefsByYm[ym][id]=d.prefs[ym][id].slice();});});
   ['3','2'].forEach(md=>['weekday','holiday'].forEach(w=>{const o=state.req[md]&&state.req[md][w];if(o){if(o.F===undefined)o.F=0;if(o.L===undefined)o.L=0;}}));
   state.result=null;state.accepted=[];state.loaded=true;
