@@ -508,7 +508,7 @@ const KIND_SHORT={all:'',day:'日のみ',night:'夜専',eve:'準のみ',nig:'深
 function kindOf(st){const k=st.kind||(st.night?'all':'day');return state.mode==='2'&&(k==='eve'||k==='nig')?'night':k;}
 const DV=['通常','朝遅め','早く帰る','時短'];
 const DV_HINT=['早出も遅出もOK','早出に入れない','遅出に入れない','いつも短時間（早出・遅出なし）'];
-const MARK=['◯','△','▲','×','★','日','夜','準','深','日!','夜!','準!','深!'];
+const MARK=['◯','・','△','×','★','日','夜','準','深','日!','夜!','準!','深!'];
 const MARK_TXT=['大丈夫','できれば勤務OK','できれば休み','絶対休み','優先休み','なるべく日勤','なるべく夜勤','なるべく準夜','なるべく深夜','必ず日勤','必ず夜勤','必ず準夜','必ず深夜'];
 const STORE_KEY='kinmu-sample-v4';
 
