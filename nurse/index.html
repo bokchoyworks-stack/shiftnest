@@ -86,9 +86,9 @@ function setupInvite(){
   const draft=store.get('sn-draft-'+inv.ym+'-'+inv.w)||{};
   S.step=draft.step&&draft.step!=='done'?draft.step:'who';
   S.id=draft.id||0;S.name=draft.name||'';S.p=draft.p||new Array(S.days.length).fill(0);
-  S.lv=draft.lv||[];S.ng=draft.ng||[];S.mode='pref';S.pin='';
+  S.lv=draft.lv||[];S.ng=draft.ng||[];S.pv=draft.pv||[-1,-1];S.mode='pref';S.pin='';
 }
-function saveDraft(){store.set('sn-draft-'+S.inv.ym+'-'+S.inv.w,{step:S.step,id:S.id,name:S.name,p:S.p,lv:S.lv,ng:S.ng});}
+function saveDraft(){store.set('sn-draft-'+S.inv.ym+'-'+S.inv.w,{step:S.step,id:S.id,name:S.name,p:S.p,lv:S.lv,ng:S.ng,pv:S.pv});}
 function fixedDays(){return new Set(((S.inv.fx||{})[S.id]||[]).map(Number));}
 function hasStar(){return (S.inv.cr||[]).includes(S.id);}
 function renderInvite(){
@@ -124,6 +124,7 @@ function renderInvite(){
         if(S.lv.includes(d.day))return `<button class="lv" data-d="${i}">${dn}<span class="tag">申請</span></button>`;
         const q=S.p[i];return `<button class="v${q}" data-d="${i}" aria-label="${d.day}日 ${MARK_TXT[q]}">${dn}<span class="mk m${q}">${MARK[q]}</span></button>`;}).join('')}</div>
       </div>
+      ${pvCard()}
       <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">管理者にも見えません</span> アプリの中だけで使います。</p>
       <div class="chips">${(inv.s||[]).filter(([id])=>id!==S.id).map(([id,n])=>`<button data-ng="${id}" aria-pressed="${S.ng.includes(id)}">${esc(n)}</button>`).join('')}</div></div>
       <button class="btn primary block" id="send">管理者に送る</button>
@@ -135,16 +136,25 @@ function renderInvite(){
       else{let nv=(S.p[i]+1)%(star?5:4);if(nv===4&&S.p.some((q,j)=>q===4&&j!==i))nv=0;S.p[i]=nv;}
       saveDraft();render();});
     app.querySelectorAll('[data-ng]').forEach(b=>b.onclick=()=>{const id=+b.dataset.ng,k=S.ng.indexOf(id);if(k>=0)S.ng.splice(k,1);else{if(S.ng.length>=2){toast('2人までです');return;}S.ng.push(id);}saveDraft();render();});
+    app.querySelectorAll('[data-pv]').forEach(el=>el.onchange=()=>{S.pv[+el.dataset.pv]=+el.value;saveDraft();});
     $('#back').onclick=()=>{S.step='who';render();};
     $('#send').onclick=async()=>{
       if(!S.pin){S.step='who';render();toast('合言葉をもう一度入れてください');return;}
       $('#send').disabled=true;$('#send').textContent='暗号化しています…';
       try{const rk=SNCodec.b64u.enc(await SNCodec.reqKey(S.pin,S.name));
-        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk});
+        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined});
         S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='管理者に送る';}};
     return;
   }
   if(S.step==='done')renderSend(head,'回答ができました','もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
+}
+function pvCard(){
+  const inv=S.inv;if(!inv.pv)return '';
+  const [y,m]=inv.ym.split('-').map(Number),last=new Date(y,m-1,0),pm=last.getMonth()+1,ld=last.getDate();
+  const opts=inv.md==='2'?[[0,'休み'],[1,'日勤'],[4,'夜勤'],[5,'明け'],[6,'有給']]:[[0,'休み'],[1,'日勤'],[2,'準夜'],[3,'深夜'],[6,'有給']];
+  const sel=i=>`<select data-pv="${i}" aria-label="${pm}月${ld-1+i}日の勤務"><option value="-1">選んでください</option>${opts.map(([v,t])=>`<option value="${v}" ${S.pv[i]===v?'selected':''}>${t}</option>`).join('')}</select>`;
+  return `<div class="card"><h2>先月の最後の2日の勤務（はじめての月だけ）</h2><p class="note" style="margin:-4px 0 8px">夜勤明けの次の日に日勤が入らないようにするために使います。</p>
+    <div class="row" style="flex-wrap:nowrap"><div style="flex:1"><label class="f">${pm}月${ld-1}日</label>${sel(0)}</div><div style="flex:1"><label class="f">${pm}月${ld}日</label>${sel(1)}</div></div></div>`;
 }
 function renderSend(head,title,foot,onBack){
   const tok=S.token,link='shiftnest://a?d='+tok;
