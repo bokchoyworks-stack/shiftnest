@@ -20,7 +20,7 @@ h1{font-size:21px;margin:4px 0 0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
 .card h2{font-size:16px;margin:0 0 10px}
 label.f{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-input[type=text],input[type=password],input[type=tel],select{font:inherit;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
+input[type=text],input[type=password],input[type=tel],input[type=email],select{font:inherit;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
 button{font:inherit;color:inherit;cursor:pointer}
 .btn{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 16px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -86,7 +86,7 @@ function setupInvite(){
   const draft=store.get('sn-draft-'+inv.ym+'-'+inv.w)||{};
   S.step=draft.step&&draft.step!=='done'?draft.step:'who';
   S.id=draft.id||0;S.name=draft.name||'';S.p=draft.p||new Array(S.days.length).fill(0);
-  S.lv=draft.lv||[];S.ng=draft.ng||[];S.pv=draft.pv||[-1,-1];S.mode='pref';S.pin='';
+  S.lv=draft.lv||[];S.ng=draft.ng||[];S.pv=draft.pv||[-1,-1];S.em=store.get('sn-em')||'';S.mode='pref';S.pin='';
 }
 function saveDraft(){store.set('sn-draft-'+S.inv.ym+'-'+S.inv.w,{step:S.step,id:S.id,name:S.name,p:S.p,lv:S.lv,ng:S.ng,pv:S.pv});}
 function fixedDays(){return new Set(((S.inv.fx||{})[S.id]||[]).map(Number));}
@@ -102,6 +102,9 @@ function renderInvite(){
       <label class="f" for="pin">合言葉（数字4けた・自分で決める）</label>
       <input type="tel" id="pin" inputmode="numeric" maxlength="4" placeholder="例：2580" autocomplete="off">
       <p class="note">合言葉は、あとで管理者から「お願い」が届いたときに、あなただけが読むために使います。どこにも送られません。</p>
+      <label class="f" for="em">連絡用メール（任意）</label>
+      <input type="email" id="em" autocomplete="email" placeholder="例：name@example.com" value="${esc(S.em||'')}">
+      <p class="note">入れておくと、次の月から案内がメールで届きます。LINEで受け取る人は空欄でかまいません。アドレスは管理者のiPhoneにだけ保存されます。</p>
       <button class="btn primary block" id="next1">次へ</button></div>`;
     $('#who').onchange=e=>{$('#newBox').hidden=e.target.value!=='new';};
     $('#next1').onclick=()=>{const v=$('#who').value;const pin=$('#pin').value.trim();
@@ -109,6 +112,7 @@ function renderInvite(){
       if(v==='new'){const n=$('#nm').value.trim();if(!n){toast('名前を入れてください');return;}S.id=0;S.name=n;}
       else{S.id=+v;S.name=(inv.s.find(x=>x[0]===S.id)||[0,''])[1];}
       if(!/^\d{4}$/.test(pin)){toast('合言葉は数字4けたです');return;}
+      S.em=($('#em').value||'').trim();if(S.em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.em)){toast('メールアドレスを確認してください');return;}store.set('sn-em',S.em);
       S.pin=pin;S.step='cal';saveDraft();render();window.scrollTo(0,0);};
     return;
   }
@@ -142,7 +146,7 @@ function renderInvite(){
       if(!S.pin){S.step='who';render();toast('合言葉をもう一度入れてください');return;}
       $('#send').disabled=true;$('#send').textContent='暗号化しています…';
       try{const rk=SNCodec.b64u.enc(await SNCodec.reqKey(S.pin,S.name));
-        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined});
+        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined,em:S.em||undefined});
         S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='管理者に送る';}};
     return;
   }
