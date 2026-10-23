@@ -340,6 +340,7 @@ function miniTable(){
   rows.forEach(([n,p])=>{t+=`<tr><th>${n}</th>`+[...p].map(c=>`<td class="s${c}">${L[+c]}</td>`).join('')+'</tr>';});return t+'</table>';
 }
 function bind(){
+  document.querySelectorAll('[data-ph]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ph===M.phase));
   document.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>{M.phase=b.dataset.ph;if(M.phase==='asking')M.replies=0;render();});
   const go=(ph,t)=>{M.phase=ph;if(t)toast(t);render();};
   const mk=$('#make');if(mk)mk.onclick=()=>{mk.textContent='作成しています…';setTimeout(()=>go(M.phase==='ready'?'cannot':'built','案を3つ作りました'),900);};
