@@ -35,7 +35,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .cal .wd{font-size:12px;text-align:center;color:var(--muted)}
 .cal .wd.su{color:var(--sun)}.cal .wd.sa{color:var(--sat)}
-.cal button{aspect-ratio:1/1.1;border:1px solid var(--line);background:var(--surface);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
+.cal button{height:52px;border:1px solid var(--line);background:var(--surface);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0}
 .cal button:active{transform:scale(.94)}
 .cal .dn{font-size:11px;color:var(--muted)} .cal .dn.su{color:var(--sun)} .cal .dn.sa{color:var(--sat)}
 .cal .mk{font-size:21px;font-weight:700;line-height:1.1}
@@ -81,7 +81,7 @@ code.tok{display:block;font-size:11px;word-break:break-all;background:var(--surf
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const WD='日月火水木金土',MARK=['◯','△','▲','×','★','日','夜','準','深','日','夜','準','深'],MARK_TXT=['大丈夫','できれば勤務OK','できれば休み','絶対休み','優先休み','なるべく日勤','なるべく夜勤','なるべく準夜','なるべく深夜','必ず日勤','必ず夜勤','必ず準夜','必ず深夜'];
+const WD='日月火水木金土',MARK=['◯','・','△','×','★','日','夜','準','深','日','夜','準','深'],MARK_TXT=['大丈夫','できれば勤務OK','できれば休み','絶対休み','優先休み','なるべく日勤','なるべく夜勤','なるべく準夜','なるべく深夜','必ず日勤','必ず夜勤','必ず準夜','必ず深夜'];
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2400);}
 function qrSvg(text){const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:4,margin:2,scalable:true});}
 const S={};
