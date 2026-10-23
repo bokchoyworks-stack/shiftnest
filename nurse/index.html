@@ -74,6 +74,7 @@ function qrSvg(text){const q=qrcode(0,'L');q.addData(text);q.make();return q.cre
 const S={};
 function parseHash(){
   const h=location.hash.slice(1),p=new URLSearchParams(h);
+  S.unlocked=false;
   try{if(p.get('i')){S.kind='invite';S.inv=SNCodec.b64Json(p.get('i'));}
       else if(p.get('q')){S.kind='req';S.inv=SNCodec.b64Json(p.get('q'));}}catch(e){S.kind='bad';}
 }
@@ -208,12 +209,29 @@ function renderReq(){
   }
 }
 function render(){
+  if((S.kind==='invite'||S.kind==='req')&&S.inv&&S.inv.e&&!S.unlocked)return renderPass();
   if(S.kind==='invite')return renderInvite();
   if(S.kind==='req')return renderReq();
   $('#app').innerHTML=`<div class="card"><h1>ShiftNest</h1><p>職場に貼ってある招待QRコードから開いてください。</p><p class="note">このページはスタッフの勤務の希望を入力するためのものです。</p></div>`;
 }
-parseHash();if(S.kind==='invite')setupInvite();render();
-window.addEventListener('hashchange',()=>{parseHash();if(S.kind==='invite')setupInvite();S.reqStep=null;render();});
+/* 職場の合言葉：招待・お願いリンクの名簿は合言葉がないと読めない */
+function wpKey(){return 'sn-wp-'+String(S.inv.k||'').slice(-16);}
+async function unlock(pass,silent){
+  try{const key=await SNCodec.reqKey(String(pass).normalize('NFKC').trim(),'inv-'+String(S.inv.k).slice(-16));
+    const d=await SNCodec.openReq(key,S.inv.e);Object.assign(S.inv,d);S.unlocked=true;store.set(wpKey(),pass);render();return true;}
+  catch(e){if(!silent)toast('合言葉が違います');return false;}
+}
+function renderPass(){
+  $('#app').innerHTML=`<div><h1>職場の合言葉</h1><p class="sub">${esc(S.inv.w||'')}</p></div><div class="card">
+    <label class="f" for="wp">管理者から聞いた「職場の合言葉」を入れてください</label>
+    <input type="text" id="wp" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="btn primary block" id="wpGo" style="margin-top:12px">開く</button>
+    <p class="note">はじめてのときだけ入れます（このスマホが覚えます）。職場の人だけが名簿を見られるようにするためのものです。</p></div>`;
+  $('#wpGo').onclick=()=>unlock($('#wp').value,false);
+}
+function autoUnlock(){if(S.inv&&S.inv.e&&!S.unlocked){const sp=store.get(wpKey());if(sp)unlock(sp,true);}}
+parseHash();if(S.kind==='invite')setupInvite();render();autoUnlock();
+window.addEventListener('hashchange',()=>{parseHash();if(S.kind==='invite')setupInvite();S.reqStep=null;render();autoUnlock();});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('../sw.js').catch(()=>{});
 </script>
 </body>
