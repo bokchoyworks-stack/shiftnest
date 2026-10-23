@@ -39,7 +39,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cal button:active{transform:scale(.94)}
 .cal .dn{font-size:11px;color:var(--muted)} .cal .dn.su{color:var(--sun)} .cal .dn.sa{color:var(--sat)}
 .cal .mk{font-size:21px;font-weight:700;line-height:1.1}
-.m0{color:var(--ok)}.m1{color:var(--accent)}.m2{color:var(--warn)}.m3{color:var(--bad)}.m4{color:var(--star)}
+.m0{color:var(--ok)}.m1{color:var(--accent)}.m2{color:var(--warn)}.m3{color:var(--bad)}.m4{color:var(--star)}.m5{color:var(--accent)}.m6,.m7,.m8{color:var(--sat)}
+.cal button.v5,.cal button.v6,.cal button.v7,.cal button.v8{border:1.5px solid currentColor;border-color:var(--sat)}.cal button.v5{border-color:var(--accent)}
+.cal button.v9{background:var(--accent);border-color:var(--accent)}.cal button.v10,.cal button.v11,.cal button.v12{background:var(--sat);border-color:var(--sat)}
+.cal button.v9 .mk,.cal button.v10 .mk,.cal button.v11 .mk,.cal button.v12 .mk,.cal button.v9 .dn,.cal button.v10 .dn,.cal button.v11 .dn,.cal button.v12 .dn{color:#fff}
+.legend b.m9,.legend b.m10,.legend b.m11,.legend b.m12{color:#fff;border-radius:6px;padding:0 4px}.legend b.m9{background:var(--accent)}.legend b.m10,.legend b.m11,.legend b.m12{background:var(--sat)}
 .cal button.v1{background:var(--accent-soft);border-color:transparent}.cal button.v2{background:var(--warn-soft);border-color:transparent}.cal button.v3{background:var(--bad-soft);border-color:transparent}.cal button.v4{background:var(--star-soft);border-color:transparent}
 .cal button.fx{background:var(--surface-2);border-style:dashed;cursor:default}
 .cal button.lv{background:var(--ok-soft);border:1.5px dashed var(--ok)}
@@ -68,7 +72,7 @@ code.tok{display:block;font-size:11px;word-break:break-all;background:var(--surf
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const WD='日月火水木金土',MARK=['◯','△','▲','×','★'],MARK_TXT=['大丈夫','できれば勤務OK','できれば休み','絶対休み','優先休み'];
+const WD='日月火水木金土',MARK=['◯','△','▲','×','★','日','夜','準','深','日','夜','準','深'],MARK_TXT=['大丈夫','できれば勤務OK','できれば休み','絶対休み','優先休み','なるべく日勤','なるべく夜勤','なるべく準夜','なるべく深夜','必ず日勤','必ず夜勤','必ず準夜','必ず深夜'];
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2400);}
 function qrSvg(text){const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:4,margin:2,scalable:true});}
 const S={};
@@ -123,9 +127,9 @@ function renderInvite(){
   if(S.step==='cal'){
     const fx=fixedDays(),lead=S.days[0].dow,star=hasStar();
     app.innerHTML=head+`<div class="card"><h2>2. だめな日だけタップ（${esc(S.name)}さん）</h2>
-      <div class="seg"><button data-mode="pref" aria-pressed="${S.mode==='pref'}">希望（◯△×）</button><button data-mode="leave" aria-pressed="${S.mode==='leave'}">有休を申請</button></div>
+      <div class="seg"><button data-mode="pref" aria-pressed="${S.mode==='pref'}">休み（◯△×）</button><button data-mode="work" aria-pressed="${S.mode==='work'}">勤務の希望</button><button data-mode="leave" aria-pressed="${S.mode==='leave'}">有休を申請</button></div>
       ${star?'<div class="box star" style="margin-top:10px"><b style="color:var(--star)">★ 先月はお願いに協力してくれてありがとう</b><br>今月は「優先休み」を1日使えます（× の次にもう1回タップ）。</div>':''}
-      ${S.mode==='leave'?'<div class="box ok" style="margin-top:10px">休みたい日をタップ。管理者が承認すると「有給」になります（週休とは別）。</div>':`<div class="legend">${MARK.slice(0,star?5:4).map((k,i)=>`<span><b class="m${i}">${k}</b> ${MARK_TXT[i]}</span>`).join('')}</div>`}
+      ${S.mode==='work'?`<div class="seg" style="margin-top:10px"><button data-must="0" aria-pressed="${!S.must}">なるべく</button><button data-must="1" aria-pressed="${!!S.must}">必ず（よほどのことがない限り）</button></div><div class="legend">${workSeq().slice(1).map(i=>`<span><b class="m${i}">${MARK[i]}</b> ${MARK_TXT[i]}</span>`).join('')}</div><p class="note" style="margin:0">入りたい勤務がある日だけタップ。押すたびに切り替わり、最後に◯に戻ります。枠だけ＝なるべく、塗りつぶし＝必ず。「必ず」は本当に外せない日だけにしてください。</p>`:S.mode==='leave'?'<div class="box ok" style="margin-top:10px">休みたい日をタップ。管理者が承認すると「有給」になります（週休とは別）。</div>':`<div class="legend">${MARK.slice(0,star?5:4).map((k,i)=>`<span><b class="m${i}">${k}</b> ${MARK_TXT[i]}</span>`).join('')}</div>`}
       <div class="cal" style="margin-top:10px">${[...WD].map((w,i)=>`<div class="wd ${i===0?'su':i===6?'sa':''}">${w}</div>`).join('')}${'<div></div>'.repeat(lead)}
       ${S.days.map((d,i)=>{const dn=`<span class="dn ${d.dow===0||d.name?'su':d.dow===6?'sa':''}">${d.day}</span>`;
         if(fx.has(d.day))return `<button class="fx" disabled>${dn}<span class="tag">有給</span></button>`;
@@ -139,10 +143,12 @@ function renderInvite(){
       <button class="btn block" id="back">名前・合言葉からやり直す</button>
       <p class="note">入力した内容は暗号化され、職場の管理者のiPhoneでだけ開けます。アプリの開発者には一切届きません。<a href="../privacy/">プライバシーについて</a></p>`;
     app.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render();});
+    app.querySelectorAll('[data-must]').forEach(b=>b.onclick=()=>{S.must=b.dataset.must==='1';render();});
     app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=+b.dataset.d,day=S.days[i].day;
       if(S.mode==='leave'){const k=S.lv.indexOf(day);if(k>=0)S.lv.splice(k,1);else S.lv.push(day);}
       else if(S.lv.includes(day))return;
-      else{let nv=(S.p[i]+1)%(star?5:4);if(nv===4&&S.p.some((q,j)=>q===4&&j!==i))nv=0;S.p[i]=nv;}
+      else if(S.mode==='work'){const sq=workSeq(),k=sq.indexOf(S.p[i]);S.p[i]=sq[(k<0?1:k+1)%sq.length];}
+      else{let nv=(S.p[i]>=5?0:S.p[i]+1)%(star?5:4);if(nv===4&&S.p.some((q,j)=>q===4&&j!==i))nv=0;S.p[i]=nv;}
       saveDraft();render();});
     app.querySelectorAll('[data-ng]').forEach(b=>b.onclick=()=>{const id=+b.dataset.ng,k=S.ng.indexOf(id);if(k>=0)S.ng.splice(k,1);else{if(S.ng.length>=2){toast('2人までです');return;}S.ng.push(id);}saveDraft();render();});
     app.querySelectorAll('[data-pv]').forEach(el=>el.onchange=()=>{S.pv[+el.dataset.pv]=+el.value;saveDraft();});
@@ -151,12 +157,13 @@ function renderInvite(){
       if(!S.pin){S.step='who';render();toast('合言葉をもう一度入れてください');return;}
       $('#send').disabled=true;$('#send').textContent='暗号化しています…';
       try{const rk=SNCodec.b64u.enc(await SNCodec.reqKey(S.pin,S.name));
-        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined,em:S.em||undefined});
+        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.map(q=>q<10?String(q):String.fromCharCode(87+q)).join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined,em:S.em||undefined});
         S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='管理者に送る';}};
     return;
   }
   if(S.step==='done')renderSend(head,'回答ができました','もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
 }
+function workSeq(){const b=S.inv.md==='2'?[5,6]:[5,7,8];return [0,...b.map(q=>S.must?q+4:q)];}
 function pvCard(){
   const inv=S.inv;if(!inv.pv)return '';
   const [y,m]=inv.ym.split('-').map(Number),last=new Date(y,m-1,0),pm=last.getMonth()+1,ld=last.getDate();
