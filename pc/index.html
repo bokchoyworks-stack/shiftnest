@@ -260,6 +260,18 @@ table.sched tr:hover td.nmc{background:var(--accent-soft)}
 /* modal */
 .modal{position:fixed;inset:0;z-index:50;background:rgba(10,20,22,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
 .modal-in{width:100%;max-width:1100px}
+.tw{background:var(--surface);color:var(--ink);border-radius:18px;max-width:640px;margin:0 auto;padding:22px 24px}
+.tw .cap{font-size:13px;color:var(--muted);margin:0 0 6px}.tw h3{font-size:22px;margin:0 0 12px}
+.tw .ex{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0}
+.tw .cols{display:flex;gap:12px}.tw .col{flex:1;display:flex;flex-direction:column;gap:6px}
+.tw .tb{border-radius:10px;padding:10px;text-align:center}.tw .tb b{display:block;font-size:16px}.tw .tb small{font-size:12px;opacity:.85}
+.tw .ta{background:#FBE3EC;color:#72243E}.tw .tbb{background:#DDF3EC;color:#085041}
+.tw .sg{border-radius:8px;padding:6px;text-align:center;border:1px solid var(--line);font-size:14px}.tw .sg small{display:block;font-size:11px;color:var(--muted)}
+.tw input[type=text]{width:100%;font-size:16px}.tw input::placeholder{color:var(--muted);opacity:.7}
+.tw .dots{display:flex;gap:6px;justify-content:center;margin:16px 0 10px}.tw .dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}.tw .dots i.on{background:var(--ink)}
+.tw .nav{display:flex;gap:10px}.tw .nav .btn{flex:1;justify-content:center}
+.tw .cnt{display:flex;align-items:center;justify-content:center;gap:24px;margin:24px 0}.tw .cnt b{font-size:48px;min-width:60px;text-align:center}.tw .cnt button{width:56px;height:56px;font-size:24px}
+.team-banner{border:1.5px solid var(--star);background:var(--star-soft);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .modal-bar{display:flex;align-items:center;gap:10px;color:#fff;margin-bottom:10px;flex-wrap:wrap}
 .modal-bar .btn{background:#fff;color:#14262A;border-color:#fff}
 .a4{background:#fff;color:#111;aspect-ratio:297/210;width:100%;border-radius:4px;padding:2.4% 2.6%;box-shadow:0 10px 40px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden}
@@ -834,6 +846,61 @@ function evEditor(st){
     <p class="note" id="evHint" style="margin:6px 0 0">${EV.yukyu.hint}</p>
   </div>`;
 }
+/* ===== チーム区分の初期設定（iPhone版 TeamSetupView と同じ流れ） ===== */
+const TW_TEAM_EX=['助産師','看護師','看護補助者','介護職','受付・事務','調理','営業','販売スタッフ'],TW_GRP_EX=['ベテラン（10年以上）','中堅（3〜9年）','新人（1〜2年目）','リーダーができる人','夜勤ができる人'];
+const twL=i=>String.fromCharCode(65+i);
+function twExtra(){return state.extra||(state.extra={});}
+function twOpen(){const x=twExtra();let d=null;try{d=JSON.parse(sessionStorage.getItem('sn-teamdraft')||'null');}catch(e){}
+  if(!d){d={step:0,n:2,names:[],subs:[],t:0};
+    if(x.teamsDone&&Array.isArray(x.teams)&&x.teams.length){d.n=x.teams.length;d.names=x.teams.slice();d.step=3;
+      d.subs=x.teams.map((_,t)=>{const a=state.groups.filter(g=>g.code[0]===twL(t)&&g.code.length>1).map(g=>{const k=g.desc.indexOf('・');return k>=0?g.desc.slice(k+1):g.desc;});return a.length?a:[''];});}}
+  state.tw=d;twRender();}
+function twSave(){try{sessionStorage.setItem('sn-teamdraft',JSON.stringify(state.tw));}catch(e){}}
+function twName(i){const v=(state.tw.names[i]||'').trim();return v||('チーム'+twL(i));}
+function twBuilt(){const d=state.tw,out=[];for(let t=0;t<d.n;t++){const L=twL(t),ss=(d.subs[t]||[]).map(x=>x.trim()).filter(Boolean);
+  if(!ss.length)out.push({code:L,desc:twName(t)});else ss.forEach((g,k)=>out.push({code:L+(k+1),desc:twName(t)+'・'+g}));}return out;}
+function twPage(){const d=state.tw;const ex=(h,b)=>`<div class="ex"><b>${h}</b>　${b}</div>`;
+  const col=(L,nm,cls)=>`<div class="col"><div class="tb ${cls}"><b>チーム${L}</b><small>例：${nm}</small></div>${[['ベテラン','10年以上'],['中堅','3〜9年'],['新人','1〜2年目']].map(([a,b],k)=>`<div class="sg"><b>${L}${k+1} ${a}</b><small>${b}</small></div>`).join('')}</div>`;
+  switch(d.step){
+  case 0:return `<p class="cap">1 / 7　はじめに</p><h3>まず「チーム」を作ります</h3><p>チーム＝仕事の種類や資格で分けた、大きなまとまりです。「この勤務には◯◯が何人」というルールに使います。</p>${ex('病院なら','A 助産師／B 看護師／C 看護補助者')}${ex('介護施設なら','A 介護職／B 看護職')}${ex('お店なら','A 社員／B アルバイト')}<p class="note">全員が同じ仕事なら、1チームだけでOKです。</p>`;
+  case 1:return `<p class="cap">2 / 7　チームの中を分ける</p><h3>チームの中に「グループ」を作れます</h3><p>経験年数などで分けます。分けなくてもかまいません。</p><div class="cols">${col('A','助産師','ta')}${col('B','看護師','tbb')}</div><p class="note">A1・B3 などの番号は自動でつきます。「B3」なら「看護師チームの新人」という意味です。</p>`;
+  case 2:return `<p class="cap">3 / 7　何に使うの？</p><h3>勤務ごとに人数のルールが作れます</h3>${ex('日勤','チームA（助産師）から2人以上')}${ex('夜勤','B3（看護師の新人）だけにしない')}${ex('夜勤','A1かB1（ベテラン）を1人以上')}${ex('なるべく','A3（助産師の新人）はA1と同じ日に')}<p class="note">ルールはあとで「区分とルール」で決めます。いまはチームとグループだけ作ります。</p>`;
+  case 3:return `<p class="cap">4 / 7　決めましょう</p><h3>チームはいくつ作りますか？</h3><div class="cnt"><button class="btn" data-tw="minus" aria-label="減らす">−</button><b>${d.n}</b><button class="btn" data-tw="plus" aria-label="増やす">＋</button></div><p class="note" style="text-align:center">迷ったら「2」。あとで増やせます。</p>`;
+  case 4:return `<p class="cap">5 / 7　名前をつける</p><h3>チームの名前を入れてください</h3>${Array.from({length:d.n},(_,i)=>`<label class="note" style="display:block;margin-top:10px">チーム${twL(i)}</label><input type="text" maxlength="16" data-twn="${i}" value="${esc(d.names[i]||'')}" placeholder="例：${TW_TEAM_EX[i*2%8]}、${TW_TEAM_EX[(i*2+1)%8]}、営業">`).join('')}<p class="note">薄い字は例です。空欄のままなら「チームA」のようになります。</p>`;
+  case 5:{const t=Math.min(d.t,d.n-1),L=twL(t),ss=d.subs[t]&&d.subs[t].length?d.subs[t]:['','',''];d.subs[t]=ss;
+    return `<p class="cap">6 / 7　グループを作る（チーム ${t+1} / ${d.n}）</p><h3>${L}「${esc(twName(t))}」の中のグループ</h3>${ss.map((v,k)=>`<label class="note" style="display:block;margin-top:10px"><b>${L}${k+1}</b></label><input type="text" maxlength="20" data-tws="${t}.${k}" value="${esc(v)}" placeholder="例：${TW_GRP_EX[k%5]}">`).join('')}${ss.length<6?'<button class="btn block" data-tw="addsub" style="margin-top:10px">＋ グループを足す</button>':''}<p class="note">分けない場合は、空欄のまま「次へ」。チーム全体が「${L}」の1つになります。</p>`;}
+  default:{const g=twBuilt(),codes=new Set(g.map(x=>x.code)),moved=state.staff.filter(st=>!codes.has(gcode(st.gi))).length;
+    return `<p class="cap">7 / 7　確認</p><h3>この区分で作ります</h3>${g.map(x=>`<div class="ex"><b style="display:inline-block;width:48px">${esc(x.code)}</b>${esc(x.desc)}</div>`).join('')}${moved?`<div class="callout bad" style="margin-top:8px"><b>!</b><span class="tx">今の区分がなくなるスタッフが${moved}人います。同じチームの最初のグループに移します。あとで「スタッフ」で直してください。</span></div>`:''}<p class="note">次は「スタッフ」で一人ひとりの区分を選びます。人数のルールは「区分とルール」から。</p>`;}
+  }}
+function twRender(){const d=state.tw;const last=6;
+  const next=d.step===5?(d.t<d.n-1?'次のチームへ':'次へ'):d.step===last?'この内容で決める':'次へ';
+  $('#modal-root').innerHTML=`<div class="modal" id="twModal"><div class="modal-in"><div class="modal-bar"><b>チーム区分を作る</b><button class="btn sm" data-tw="close" style="margin-left:auto">あとで</button></div>
+    <div class="tw">${twPage()}<div class="dots">${Array.from({length:last+1},(_,i)=>`<i class="${i===d.step?'on':''}"></i>`).join('')}</div>
+    <div class="nav">${d.step>0?'<button class="btn" data-tw="back">戻る</button>':''}<button class="btn primary" data-tw="next">${next}</button></div></div></div></div>`;
+  twSave();}
+document.addEventListener('input',e=>{if(!state.tw)return;const t=e.target;
+  if(t.dataset.twn!==undefined)state.tw.names[+t.dataset.twn]=t.value;
+  else if(t.dataset.tws!==undefined){const [a,b]=t.dataset.tws.split('.').map(Number);state.tw.subs[a][b]=t.value;}
+  else return;twSave();});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-tw],[data-teamwiz]');if(!b)return;
+  if(b.dataset.teamwiz!==undefined){twOpen();return;}
+  const d=state.tw;if(!d)return;const a=b.dataset.tw;
+  if(a==='close'){twSave();$('#modal-root').innerHTML='';state.tw=null;return;}
+  if(a==='minus'&&d.n>1)d.n--;if(a==='plus'&&d.n<6)d.n++;
+  if(a==='addsub'){d.subs[d.t].push('');}
+  if(a==='back'){if(d.step===5&&d.t>0)d.t--;else if(d.step===6){d.step=5;d.t=d.n-1;}else d.step=Math.max(0,d.step-1);}
+  if(a==='next'){if(d.step===4){d.t=0;d.step=5;}else if(d.step===5){if(d.t<d.n-1)d.t++;else d.step=6;}
+    else if(d.step===6){twApply(Array.from({length:d.n},(_,i)=>twName(i)),twBuilt());try{sessionStorage.removeItem('sn-teamdraft');}catch(e){}
+      $('#modal-root').innerHTML='';state.tw=null;changed();renderSetup();toast('チーム区分を作りました');return;}
+    else d.step++;}
+  twRender();});
+function twApply(names,ng){const old=state.groups;
+  const exact=gi=>{if(gi<0||gi>=old.length)return -1;return ng.findIndex(g=>g.code===old[gi].code);};
+  const loose=gi=>{const j=exact(gi);if(j>=0)return j;const L=(old[gi]||{code:''}).code[0];const k=ng.findIndex(g=>g.code[0]===L);return k>=0?k:0;};
+  state.staff.forEach(st=>{st.gi=loose(st.gi);});(state.pending||[]).forEach(p=>{if(p.gi!=null)p.gi=loose(p.gi);});
+  state.combo=state.combo.map(r=>{const g=[...new Set(r.g.map(exact).filter(x=>x>=0))].sort((a,b)=>a-b);const o=Object.assign({},r,{g});if(r.p)o.p=[...new Set(r.p.map(exact).filter(x=>x>=0))].sort((a,b)=>a-b);return o;})
+    .filter(r=>r.g.length&&!(r.type==='with'&&!(r.p||[]).length));
+  state.groups=ng;const x=twExtra();x.teams=names;x.teamsDone=true;}
 function renderSetup(){
   const r=state.req[state.mode],days=getDays(),bo=baseOff();
   const {cfg}=buildCfg(),m=buildModel(cfg),slack=m.supply-m.demand;
@@ -846,6 +913,7 @@ function renderSetup(){
   $('#p-setup').innerHTML=`
   <div class="panel-head"><div><h2>師長の設定</h2><p>上から順に。2か月目からは「③スタッフ」の変更（退職・有給など）と締切だけで済みます。</p></div></div>
   <div class="setup-col">
+  ${(state.extra||{}).teamsDone?'':`<div class="team-banner"><div style="flex:1;min-width:240px"><b>はじめに：チーム区分を作りましょう</b><div class="note">例：A 助産師・B 看護師、その中にベテラン・中堅・新人。絵で説明しながら1つずつ決めます（3分）。</div></div><button class="btn primary" data-teamwiz="1">チーム区分を作る</button></div>`}
   <div class="card">
     ${secHead(1,'病棟の基本','')}
     <div class="row"><span class="grow"><b>勤務の形</b><br><span class="note">${state.mode==='3'?'日勤・準夜・深夜':'日勤・夜勤（夜勤の翌日は明け、その次は休み）'}</span></span>
@@ -907,7 +975,7 @@ function renderSetup(){
     ${secHead(4,'区分とルール','病棟に合わせて変えられます')}
     <div class="lbl" style="margin-bottom:4px">区分（資格・経験）</div>
     <div class="glist">${state.groups.map((g,i)=>{const c=state.staff.filter(x=>x.gi===i).length;return `<div class="grow-row"><input type="text" id="gcode${i}" data-gcode="${i}" value="${esc(g.code)}" aria-label="区分の記号" style="width:60px;font-weight:700"><input type="text" id="gdesc${i}" data-gdesc="${i}" value="${esc(g.desc)}" aria-label="区分の説明" class="grow"><span class="note" style="min-width:52px;text-align:right">所属${c}人</span><button class="btn sm" data-gdel="${i}" ${state.groups.length<=1?'disabled':''}>削除</button></div>${state.gdelAsk===i?`<div class="gdel-ask">${c?`<span>${esc(g.code)} の${c}人を</span><select id="gmove" aria-label="移す先">${state.groups.map((g2,j)=>j===i?'':`<option value="${j}">${esc(g2.code)} ${esc(g2.desc)}</option>`).join('')}</select><span>に移して</span>`:''}<button class="btn sm primary" data-gdelok="${i}">削除する</button><button class="btn sm" id="gdelNo">やめる</button></div>`:''}`;}).join('')}</div>
-    <div class="row" style="margin:8px 0 16px"><button class="btn sm" data-gadd="1">＋ 区分を追加</button><span class="note">記号と説明はそのまま書き換えられます。人数（所属）はスタッフの区分で決まります。</span></div>
+    <div class="row" style="margin:8px 0 16px"><button class="btn sm primary" data-teamwiz="1">チーム区分を作る・見直す（説明つき）</button><button class="btn sm" data-gadd="1">＋ 区分を追加</button><span class="note">記号と説明はそのまま書き換えられます。人数（所属）はスタッフの区分で決まります。</span></div>
     <div class="lbl" style="margin-bottom:6px">組み合わせのルール（夜勤ごとにチェック）</div>
     <div class="rlist">${state.combo.map((rr,i)=>ruleRow(rr,i)).join('')||'<p class="note">ルールはまだありません</p>'}</div>
     ${state.ruleAdd?`<div class="radd">
