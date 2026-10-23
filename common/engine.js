@@ -4,12 +4,14 @@ const OFF=0,DAY=1,EVE=2,NIG=3,YAK=4,AKE=5;
 const LABEL=['休','日','準','深','夜','明','有','—'];
 const LONG=['休み','日勤','準夜','深夜','夜勤','明け','有給','不在'];
 const WD='日月火水木金土';
-function allowedTable(mode){
-  const a=Array.from({length:8},()=>Array(8).fill(true));
-  if(mode==='3'){a[EVE][DAY]=false;a[NIG][DAY]=false;a[EVE][NIG]=false;}
+/* 並びのルール。rules: akeOff（明けの次は休み・既定true） dayToNight（日勤の次の日に夜勤・既定true）
+   unlockEveDay/unlockNigDay/unlockEveNig（3交代の鍵つきルールを外す・既定false） */
+function allowedTable(mode,rules){
+  const R=rules||{},a=Array.from({length:8},()=>Array(8).fill(true));
+  if(mode==='3'){if(!R.unlockEveDay)a[EVE][DAY]=false;if(!R.unlockNigDay)a[NIG][DAY]=false;if(!R.unlockEveNig)a[EVE][NIG]=false;}
   else{
-    a[DAY][YAK]=false;
-    for(let s=0;s<6;s++){if(s!==AKE)a[YAK][s]=false;if(s!==OFF)a[AKE][s]=false;if(s!==YAK)a[s][AKE]=false;}
+    if(R.dayToNight===false)a[DAY][YAK]=false;
+    for(let s=0;s<6;s++){if(s!==AKE)a[YAK][s]=false;if(R.akeOff!==false&&s!==OFF)a[AKE][s]=false;if(s!==YAK)a[s][AKE]=false;}
   }
   for(let s=0;s<8;s++){a[s][6]=a[s][7]=a[s][OFF];}
   for(let s=0;s<8;s++){a[6][s]=a[7][s]=a[OFF][s];}
@@ -22,7 +24,7 @@ function wantOK(m,q,s){if(q>=9)q-=4;return q===5?s===DAY:q===6?(m.mode==='2'?s==
 function buildModel(cfg){
   const {mode,days,staff,prefs,ng,prev,req,rules}=cfg;
   const S=staff.length,D=days.length;
-  const allowed=allowedTable(mode);
+  const allowed=allowedTable(mode,rules);
   const nightCodes=mode==='3'?[EVE,NIG]:[YAK];
   const isNight=new Uint8Array(6);nightCodes.forEach(c=>isNight[c]=1);
   const need=[];let err=null;
@@ -45,7 +47,9 @@ function buildModel(cfg){
   const nightOnly=staff.map(st=>st.kind==='night'||st.kind==='eve'||st.kind==='nig');
   const fixed=cfg.fixed,fixCnt=fixed.map(f=>f.reduce((a,v)=>a+(v?1:0),0));
   const workCap=target.map((t,i)=>Math.max(0,D-t-fixCnt[i])),capSum=workCap.reduce((a,b)=>a+b,0)||1;
-  const maxNs=staff.map((st,i)=>nightOnly[i]?(mode==='3'?Math.min(18,workCap[i]):Math.min(9,Math.floor(workCap[i]/2))):maxN);
+  const maxNs=staff.map((st,i)=>nightOnly[i]?(mode==='3'?Math.min(18,workCap[i]):Math.min(9,Math.floor(workCap[i]/2))):maxN).map((v,i)=>staff[i].nMax!=null?Math.min(v,staff[i].nMax):v);
+  const minNs=staff.map(st=>st.nMin||0),maxDs=staff.map(st=>st.dMax==null?99:st.dMax);
+  const nightRunMax=mode==='2'?(rules.nightRunMax==null?2:rules.nightRunMax):0;
   let noNights=0;nightOnly.forEach((o,i)=>{if(o)noNights+=maxNs[i];});
   const nReg=nightOK.filter((ok,i)=>ok&&!nightOnly[i]).length||1;
   const nNight=nReg;
@@ -57,14 +61,14 @@ function buildModel(cfg){
   const expW=workCap.map(c=>holWork*c/capSum);
   const NG=Array.from({length:S},()=>new Uint8Array(S));
   for(const [a,b] of ng){NG[a][b]=1;NG[b][a]=1;}
-  return {mode,days,S,D,allowed,nightCodes,isNight,need,gi,G,combo,groups:cfg.groups,fixed,ban,nightBits,nightOnly,maxNs,dv,canL,canE,lateNeed,earlyNeed,nightOK,target,maxN,expN,expW,NG,prefs,prev,rules,err,demand,supply:capSum,nightSlots,nNight,nightHours:mode==='3'?8:16};
+  return {minNs,maxDs,nightRunMax,mode,days,S,D,allowed,nightCodes,isNight,need,gi,G,combo,groups:cfg.groups,fixed,ban,nightBits,nightOnly,maxNs,dv,canL,canE,lateNeed,earlyNeed,nightOK,target,maxN,expN,expW,NG,prefs,prev,rules,err,demand,supply:capSum,nightSlots,nNight,nightHours:mode==='3'?8:16};
 }
 function rowPen(m,X,n){
   const row=X[n],P=m.prefs[n],A=m.allowed,D=m.D,pv=m.prev[n];
   let p=0,prevS=pv[1],off=0,nights=0,wk=0;
   let run=pv[1]!==OFF?(pv[0]!==OFF?2:1):0;
   let nr=m.isNight[pv[1]]?(pv[0]===pv[1]?2:1):0;
-  const mc=m.rules.maxConsec;
+  const mc=m.rules.maxConsec,nrm=m.nightRunMax;let p2=pv[0],pr=(pv[0]===YAK&&pv[1]===AKE)?1:0,dc=0;
   for(let d=0;d<D;d++){
     const s=row[d];
     if(!A[prevS][s])p+=W.hard;
@@ -77,11 +81,15 @@ function rowPen(m,X,n){
       if(m.days[d].hol)wk++;
       if(m.ban[n][d]&(1<<s))p+=W.hard;
       if(m.isNight[s]){nights++;nr=(s===prevS)?nr+1:1;if(nr>1)p+=W.nrun*(nr-1);}else nr=0;
+      if(s===DAY)dc++;
     }
-    prevS=s;
+    if(nrm){if(s===YAK){pr=(prevS===AKE&&p2===YAK)?pr+1:1;if(pr>nrm)p+=W.hard;}else if(s!==AKE)pr=0;}
+    p2=prevS;prevS=s;
   }
   const sh=m.target[n]-off;if(sh>0)p+=W.short*sh;
   if(nights>m.maxNs[n])p+=W.overN*(nights-m.maxNs[n]);
+  if(nights<m.minNs[n])p+=W.short*(m.minNs[n]-nights);
+  if(dc>m.maxDs[n])p+=W.overN*(dc-m.maxDs[n]);
   if(m.nightOK[n]){const e=nights-m.expN[n];p+=W.fairN*e*e;}
   const e2=wk-m.expW[n];p+=W.fairW*e2*e2;
   return p;
@@ -145,7 +153,7 @@ function initial(m,rnd){
     if(m.mode==='2'){
       for(let n=0;n<S;n++){if(!free[n])continue;const p=prevOf(n);
         if(p===YAK){X[n][d]=AKE;free[n]=0;cnt[AKE]--;works[n]++;}
-        else if(p===AKE){X[n][d]=OFF;free[n]=0;}}
+        else if(p===AKE&&m.rules.akeOff!==false){X[n][d]=OFF;free[n]=0;}}
     }
     const order=m.mode==='3'?[NIG,EVE]:[YAK];
     for(const c of order){
@@ -221,10 +229,11 @@ function verify(m,X){
     }
   }
   for(let n=0;n<S;n++){
-    let prevS=m.prev[n][1],run=0,nr=0;
+    let prevS=m.prev[n][1],run=0,nr=0,p2=m.prev[n][0],pr=(m.prev[n][0]===YAK&&m.prev[n][1]===AKE)?1:0;
     for(let d=0;d<D;d++){
       const s=X[n][d],q=m.prefs[n][d];
       if(!m.allowed[prevS][s])hard.push({type:'並び',n,d,msg:(d+1)+'日：'+LONG[prevS]+'→'+LONG[s]+' は禁止'});
+      if(m.nightRunMax){if(s===YAK){pr=(prevS===AKE&&p2===YAK)?pr+1:1;if(pr>m.nightRunMax)hard.push({type:'並び',n,d,msg:(d+1)+'日：夜勤→明けが'+pr+'回続いています（'+m.nightRunMax+'回まで）'});}else if(s!==AKE)pr=0;}
       if(s>0&&s<6&&(m.ban[n][d]&(1<<s)))hard.push({type:'勤務タイプ',n,d,msg:(d+1)+'日：'+LONG[s]+'に入れない人が'+LONG[s]});
       if(m.isNight[s])nights[n]++;
       if(s===OFF){offs[n]++;run=0;}else if(s>=6){run=0;}else{run++;if(run>maxRun[n])maxRun[n]=run;if(m.days[d].hol)wk[n]++;}
@@ -234,7 +243,7 @@ function verify(m,X){
       if(q===1){pref.p1[1]++;if(s===OFF)pref.p1[0]++;}
       if(q===4){pref.star[1]++;if(s===OFF)pref.star[0]++;}}
       if(q>=5){const k=q>=9?'must':'want';pref[k][1]++;if(wantOK(m,q,s))pref[k][0]++;}
-      prevS=s;
+      p2=prevS;prevS=s;
     }
     if(offs[n]<m.target[n])short.push({n,lack:m.target[n]-offs[n]});
     if(nights[n]>m.maxNs[n])overN.push({n,over:nights[n]-m.maxNs[n]});
