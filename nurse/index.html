@@ -70,11 +70,20 @@ code.tok{display:block;font-size:11px;word-break:break-all;background:var(--surf
 .pb .mk.lvk{color:var(--ok)}
 .m6{color:var(--sat)}
 [hidden]{display:none!important}
+.rec{border:1.5px solid var(--accent);border-radius:14px;padding:12px;background:var(--accent-soft)}
+.rec .cn{font-size:22px;font-weight:800;letter-spacing:.06em;font-family:ui-monospace,Menlo,monospace}
+.hist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.hist div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:var(--surface)}
+#print{display:none}
+@media print{body{background:#fff;color:#000;padding:0}main,.toast{display:none!important}#print{display:block;font-size:12pt;color:#000}
+#print h1{font-size:16pt;margin:0 0 4pt}#print table{border-collapse:collapse;width:100%;margin-top:8pt}#print td,#print th{border:.5pt solid #888;padding:3pt 5pt;font-size:10.5pt;text-align:left}
+#print .cn{font-size:18pt;font-weight:800;letter-spacing:.06em}}
 </style>
 </head>
 <body>
 <main id="app"><div class="card">読み込み中…</div></main>
 <div class="toast" id="toast"></div>
+<div id="print"></div>
 <script src="../vendor/qrcode.js"></script>
 <script src="../common/holidays.js"></script>
 <script src="../common/codec.js"></script>
@@ -92,6 +101,35 @@ function parseHash(){
       else if(p.get('q')){S.kind='req';S.inv=SNCodec.b64Json(p.get('q'));}}catch(e){S.kind='bad';}
 }
 const store={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+
+/* ---------- 送った記録（控え）。確認番号は管理者のアプリの「受け取った記録」と同じ ---------- */
+function newCn(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=new Uint8Array(8);crypto.getRandomValues(r);const s=[...r].map(x=>A[x%A.length]).join('');return s.slice(0,4)+'-'+s.slice(4);}
+function stampNow(){const d=new Date(),z=n=>String(n).padStart(2,'0');return d.getFullYear()+'/'+z(d.getMonth()+1)+'/'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());}
+/* 管理者側（iOS AppStore.summarize）と同じ書き方 */
+function summarize(p,lvn){const c=f=>p.filter(f).length;
+  const it=[['希望休',c(q=>q===3)],['優先休み',c(q=>q===4)],['できれば休み',c(q=>q===2)],['勤務の希望',c(q=>q>=5&&q<=8)],['業務',c(q=>q>=9)],['有休申請',lvn]].filter(x=>x[1]>0);
+  return it.length?it.map(x=>x[0]+x[1]+'日').join('・'):'希望なし（すべてどちらでもOK）';}
+function recKey(){return 'sn-rec-'+String(S.inv.k||S.inv.w).slice(-16);}
+function recList(){return store.get(recKey())||[];}
+function addRec(r){const a=recList();a.unshift(r);store.set(recKey(),a.slice(0,60));}
+function lastRecFor(ym,name){return recList().find(r=>r.ym===ym&&r.name===name);}
+function printRec(r){
+  const [y,m]=r.ym.split('-').map(Number);
+  $('#print').innerHTML=`<h1>勤務の希望　送信の控え</h1>
+    <p>${esc(r.w||'')}　${y}年${m}月分　${esc(r.name)}さん</p>
+    <p>送った日時：${esc(r.at)}<br>確認番号：<span class="cn">${esc(r.cn)}</span></p>
+    <p>まとめ：${esc(r.sum)}</p>
+    <table><tr><th>日</th><th>希望</th></tr>${(r.days||[]).map(([d,t])=>`<tr><td>${m}/${d}</td><td>${esc(t)}</td></tr>`).join('')||'<tr><td colspan="2">特になし（すべてどちらでもOK）</td></tr>'}</table>
+    <p style="margin-top:10pt;font-size:9.5pt">管理者のアプリの「受け取った記録」に同じ確認番号があれば、この内容が届いています。夜勤で一緒にならないようにしたい人は、控えにも載せていません。</p>`;
+  setTimeout(()=>window.print(),50);
+}
+function recCard(r,title){return `<div class="rec"><div class="note" style="color:var(--ink)">${title}</div>
+  <div class="cn">${esc(r.cn)}</div><div class="note">確認番号・${esc(r.at)}</div><div style="margin-top:6px;font-size:14px">${esc(r.sum)}</div>
+  <button class="btn block" data-print="${esc(r.cn)}" style="margin-top:8px">控えを保存（PDF・印刷）</button>
+  <p class="note" style="margin:6px 0 0">「PDF・印刷」→ 共有 →「ファイルに保存」でPDFになります。管理者のアプリにも同じ確認番号が残ります。</p></div>`;}
+function histHtml(){const a=recList().filter(r=>r.ym===S.inv.ym);if(!a.length)return '';
+  return `<details style="margin-top:10px"><summary class="note">この月に送った記録（${a.length}件）</summary><div class="hist">${a.map(r=>`<div><b>${esc(r.at)}</b>　${esc(r.name)}　<span style="font-family:ui-monospace,Menlo,monospace">${esc(r.cn)}</span><br>${esc(r.sum)}<br><button class="btn" data-print="${esc(r.cn)}" style="padding:6px 10px;margin-top:4px;font-size:13px">控えを保存</button></div>`).join('')}</div></details>`;}
+function bindPrint(){document.querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>{const r=recList().find(x=>x.cn===b.dataset.print);if(r)printRec(r);});}
 
 /* ---------- 招待：希望入力 ---------- */
 function setupInvite(){
@@ -122,8 +160,8 @@ function renderInvite(){
       <input type="email" id="em" autocomplete="email" placeholder="例：name@example.com" value="${esc(S.em||'')}">
       <label class="note" style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" id="emok" ${S.em?'checked':''} style="margin-top:4px"> このアドレスを職場の管理者に渡し、勤務の案内メールに使うことに同意します（入れた人だけ）</label>
       <p class="note">入れておくと、次の月から案内がメールで届きます。LINEで受け取る人は空欄でかまいません。アドレスは管理者のiPhoneにだけ保存され、アプリの開発者には届きません。</p>
-      <button class="btn primary block" id="next1">次へ</button></div>`;
-    $('#who').onchange=e=>{$('#newBox').hidden=e.target.value!=='new';};
+      <button class="btn primary block" id="next1">次へ</button>${histHtml()}</div>`;
+    $('#who').onchange=e=>{$('#newBox').hidden=e.target.value!=='new';};bindPrint();
     $('#next1').onclick=()=>{const v=$('#who').value;const pin=$('#pin').value.trim();
       if(!v){toast('名前を選んでください');return;}
       if(v==='new'){const n=$('#nm').value.trim();if(!n){toast('名前を入れてください');return;}S.id=0;S.name=n;}
@@ -176,13 +214,19 @@ function renderInvite(){
     $('#back').onclick=()=>{S.step='who';render();};
     $('#send').onclick=async()=>{
       if(!S.pin){S.step='who';render();toast('合言葉をもう一度入れてください');return;}
+      {const prev=lastRecFor(inv.ym,S.name);if(!confirm('管理者に送りますか？'+(prev?'\n\n前回は '+prev.at+' に送っています。送り直すと、最後に送った内容が使われます。':'')))return;}
       $('#send').disabled=true;$('#send').textContent='暗号化しています…';
       try{const rk=SNCodec.b64u.enc(await SNCodec.reqKey(S.pin,S.name));
-        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,id:S.id,name:S.name,p:S.p.map(q=>q<10?String(q):String.fromCharCode(87+q)).join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined,em:S.em||undefined,mr:(()=>{const o={};S.p.forEach((q,i)=>{const dd=S.days[i].day;if(q>=9&&S.mr[dd])o[dd]=S.mr[dd];});return Object.keys(o).length?o:undefined;})()});
+        const cn=newCn(),at=stampNow();
+        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,r:inv.r||0,cn,at,id:S.id,name:S.name,p:S.p.map(q=>q<10?String(q):String.fromCharCode(87+q)).join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined,em:S.em||undefined,mr:(()=>{const o={};S.p.forEach((q,i)=>{const dd=S.days[i].day;if(q>=9&&S.mr[dd])o[dd]=S.mr[dd];});return Object.keys(o).length?o:undefined;})()});
+        const mk=['','・','できれば休み','希望休','優先休み','日勤がいい',inv.md==='2'?'夜勤がいい':'夜勤がいい','準夜がいい','深夜がいい'];
+        const days=[];S.days.forEach((d,i)=>{const q=S.p[i];if(S.lv.includes(d.day))days.push([d.day,'有休申請']);else if(q>=9)days.push([d.day,MARK_TXT[q]+(S.mr[d.day]?'（'+S.mr[d.day]+'）':'')]);else if(q>1)days.push([d.day,mk[q]]);});
+        S.rec={ym:inv.ym,w:inv.w,name:S.name,cn,at,sum:summarize(S.p,S.lv.length),days};addRec(S.rec);
         S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='管理者に送る';}};
     return;
   }
-  if(S.step==='done')renderSend(head,'回答ができました','もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
+  if(S.step==='done'){renderSend(head,'回答ができました','もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
+    const r=S.rec||lastRecFor(inv.ym,S.name);if(r){$('#app').insertAdjacentHTML('beforeend',`<div class="card">${recCard(r,'送信の控え（言った・言わないを防ぐため、保存しておくと安心です）')}${histHtml()}</div>`);bindPrint();}}
 }
 function workSeq(){const b=S.inv.md==='2'?[5,6]:[5,7,8];return [0,...b.map(q=>S.must?q+4:q)];}
 function pvCard(){
@@ -230,7 +274,7 @@ function renderReq(){
   if(S.reqStep==='ask'){
     app.innerHTML=head+`<div class="card"><h2>${esc(S.name)}さんへ</h2><p style="font-size:17px">${esc(S.req.msg)}</p><p class="note">ほかの日の希望は変わりません。むりなら断って大丈夫です（理由は聞きません）。</p>
       <div class="row"><button class="btn primary" id="yes" style="flex:1">入れる</button><button class="btn" id="no" style="flex:1">むり</button></div></div>`;
-    const answer=async ok=>{S.token=await SNCodec.sealToPub(inv.k,{t:'req-ok',ym:inv.ym,id:S.id,d:S.req.d,ok});
+    const answer=async ok=>{if(ok&&!confirm('「入れる」と返事をしますか？'))return;S.token=await SNCodec.sealToPub(inv.k,{t:'req-ok',ym:inv.ym,r:inv.r||0,id:S.id,d:S.req.d,ok});
       if(!ok){app.innerHTML=head+'<div class="card"><h2>わかりました</h2><p class="note">返事は送らなくて大丈夫です。</p></div>';return;}
       renderSend(head,'ありがとうございます','管理者がアプリに取り込み、勤務表を更新すると反映されます。何人かがOKした場合は、アプリが1人を選びます。',null);};
     $('#yes').onclick=()=>answer(true);$('#no').onclick=()=>answer(false);
