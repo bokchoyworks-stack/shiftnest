@@ -134,27 +134,19 @@ function renderInvite(){
     return;
   }
   if(S.step==='cal'){
-    const fx=fixedDays(),lead=S.days[0].dow,star=hasStar();const br=S.brush||'x';
-    const PAL={o:[0,'◯','消す'],r:[2,'△','できれば休み'],x:[3,'×','必ず休み'],s:[4,'★','優先休み'],l:[-1,'有','有休'],d:[5,'日','できれば日勤'],n:[6,'夜','できれば夜勤'],D:[9,'日','必ず日勤'],N:[10,'夜','必ず夜勤']};
-    const pb=k=>{const [c,m,t]=PAL[k];return `<button class="pb ${br===k?'on':''}" data-b="${k}"><b class="mk ${c>=9?'fill f'+c:c<0?'lvk':'m'+c}">${m}</b><span>${t}</span></button>`;};
-    app.innerHTML=head+`<div class="card"><h2>2. 希望のある日だけ（${esc(S.name)}さん）</h2>
-      <p class="note" style="margin:-4px 0 8px">① 下の印を選ぶ → ② カレンダーの日をタップ。同じ印でもう一度タップすると消えます。何も付けない日は「どちらでもOK」です。</p>
-      <div class="pal">
-        <div class="pr"><span class="pl">休み</span>${pb('r')}${pb('x')}${star?pb('s'):''}${pb('l')}</div>
-        <div class="pr"><span class="pl">勤務</span>${pb('d')}${pb('n')}<span style="flex:1"></span></div>
-        <div class="pr"><span class="pl">必ず</span>${pb('D')}${pb('N')}<span style="flex:1"></span></div>
-        <div class="pr"><span class="pl"></span>${pb('o')}<span style="flex:2"></span></div>
-        <p class="note" style="margin:0">「必ず」は病院の仕事があるときだけ使えます。</p>
-      </div>
-      ${br==='D'||br==='N'?`<label class="f" for="mrr">病院の仕事の内容（必ず入れてください）</label><input type="text" id="mrr" maxlength="40" placeholder="例：委員会、研修、外来応援" value="${esc(S.mrText||'')}"><p class="note" style="margin:4px 0 0">管理者が確認して認めると「必ず」になります。それまでは「できれば」として扱います。</p>`:''}
-      ${br==='l'?'<div class="box ok" style="margin-top:10px">休みたい日をタップ。管理者が承認すると「有給」になります（週休とは別）。</div>':''}
-      ${star&&br==='s'?'<div class="box star" style="margin-top:10px"><b style="color:var(--star)">★ 先月はお願いに協力してくれてありがとう</b><br>今月は「優先休み」を1日使えます。</div>':''}
+    const fx=fixedDays(),lead=S.days[0].dow,star=hasStar();const sp=S.sp||'';
+    const seq=star?[0,3,4,2,5,6]:[0,3,2,5,6];
+    app.innerHTML=head+`<div class="card"><h2>2. 希望のある日をタップ（${esc(S.name)}さん）</h2>
+      ${sp?'':`<div class="legend" style="margin:0 0 4px">${seq.slice(1).map(q=>`<span><b class="m${q}">${MARK[q]}</b> ${q===3?'必ず休み':q===2?'できれば休み':q===4?'優先休み':q===5?'日勤がいい':'夜勤がいい'}</span>`).join('<span style="border:0;padding:0">→</span>')}</div>
+      <p class="note" style="margin:0">タップするたびに印が変わり、最後に空白（どちらでもOK）に戻ります。「夜」＝${inv.md==='2'?'夜勤':'準夜か深夜'}。</p>`}
+      ${sp==='l'?'<div class="box ok">有休にしたい日をタップ（もう一度で取り消し）。管理者が承認すると「有給」になります。</div>':''}
+      ${sp==='m'?`<div class="box info">「必ず」をつける日をタップ。押すたびに <b>必ず日勤 → 必ず夜勤 → なし</b>。病院の仕事があるときだけ使えます。</div><label class="f" for="mrr">病院の仕事の内容（必ず入れてください）</label><input type="text" id="mrr" maxlength="40" placeholder="例：委員会、研修、外来応援" value="${esc(S.mrText||'')}">`:''}
       <div class="cal" style="margin-top:10px">${[...WD].map((w,i)=>`<div class="wd ${i===0?'su':i===6?'sa':''}">${w}</div>`).join('')}${'<div></div>'.repeat(lead)}
       ${S.days.map((d,i)=>{const dn=`<span class="dn ${d.dow===0||d.name?'su':d.dow===6?'sa':''}">${d.day}</span>`;
         if(fx.has(d.day))return `<button class="fx" disabled>${dn}<span class="tag">有給</span></button>`;
         if(S.lv.includes(d.day))return `<button class="lv" data-d="${i}">${dn}<span class="tag">有休申請</span></button>`;
         const q=S.p[i];return `<button class="v${q}" data-d="${i}" aria-label="${d.day}日 ${q?MARK_TXT[q]:'どちらでもOK'}">${dn}<span class="mk m${q}">${q?MARK[q]:''}</span></button>`;}).join('')}</div>
-      <p class="note" style="margin:8px 0 0">「夜」＝${inv.md==='2'?'夜勤':'準夜か深夜'}。枠だけ＝できれば、塗りつぶし＝必ず。</p>
+      <div class="row" style="margin-top:10px">${sp?`<button class="btn primary block" data-sp="">完了（ふつうの入力に戻る）</button>`:`<button class="btn" data-sp="l" style="flex:1">有休を申請する</button><button class="btn" data-sp="m" style="flex:1">必ず（病院の仕事）</button>`}</div>
       </div>
       ${pvCard()}
       <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">管理者にも見えません</span> アプリの中だけで使います。</p>
@@ -162,18 +154,18 @@ function renderInvite(){
       <button class="btn primary block" id="send">管理者に送る</button>
       <button class="btn block" id="back">名前・合言葉からやり直す</button>
       <p class="note">入力した内容は暗号化され、職場の管理者のiPhoneでだけ開けます。アプリの開発者には一切届きません。<a href="../privacy/">プライバシーについて</a></p>`;
-    app.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{S.brush=b.dataset.b;render();});
+    app.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{S.sp=b.dataset.sp;render();});
     {const mrr=$('#mrr');if(mrr)mrr.oninput=e=>{S.mrText=e.target.value;};}
-    app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=+b.dataset.d,day=S.days[i].day,br=S.brush||'x';
-      const CODE={o:0,r:2,x:3,s:4,d:5,n:6,D:9,N:10};
-      if(br==='l'){const k=S.lv.indexOf(day);if(k>=0)S.lv.splice(k,1);else{S.lv.push(day);S.p[i]=0;delete S.mr[day];}}
-      else{
-        if((br==='D'||br==='N')&&!(S.mrText||'').trim()){toast('「必ず」は病院の仕事があるときだけです。上に内容を入れてください');return;}
-        const c=CODE[br];
-        if(c===4&&S.p.some((q,j)=>q===4&&j!==i)){toast('優先休みは1日だけです');return;}
-        {const k=S.lv.indexOf(day);if(k>=0)S.lv.splice(k,1);}
-        S.p[i]=(S.p[i]===c&&c!==0)?0:c;
+    app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=+b.dataset.d,day=S.days[i].day,sp=S.sp||'';
+      const k=S.lv.indexOf(day);
+      if(sp==='l'){if(k>=0)S.lv.splice(k,1);else{S.lv.push(day);S.p[i]=0;delete S.mr[day];}}
+      else if(sp==='m'){if(!(S.mrText||'').trim()){toast('上に病院の仕事の内容を入れてください');return;}
+        if(k>=0)S.lv.splice(k,1);const ms=[0,9,10],j=ms.indexOf(S.p[i]);S.p[i]=ms[(j<0?1:j+1)%3];
         if(S.p[i]>=9)S.mr[day]=S.mrText.trim();else delete S.mr[day];}
+      else{if(k>=0){S.lv.splice(k,1);S.p[i]=0;}
+        else{const sq=hasStar()?[0,3,4,2,5,6]:[0,3,2,5,6];let j=sq.indexOf(S.p[i]),nv=j<0?0:sq[(j+1)%sq.length];
+          if(nv===4&&S.p.some((q,x)=>q===4&&x!==i))nv=sq[(sq.indexOf(4)+1)%sq.length];
+          S.p[i]=nv;delete S.mr[day];}}
       saveDraft();render();});
     app.querySelectorAll('[data-ng]').forEach(b=>b.onclick=()=>{const id=+b.dataset.ng,k=S.ng.indexOf(id);if(k>=0)S.ng.splice(k,1);else{if(S.ng.length>=2){toast('2人までです');return;}S.ng.push(id);}saveDraft();render();});
     app.querySelectorAll('[data-pv]').forEach(el=>el.onchange=()=>{S.pv[+el.dataset.pv]=+el.value;saveDraft();});
