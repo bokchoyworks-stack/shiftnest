@@ -39,7 +39,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .cal button:active{transform:scale(.94)}
 .cal .dn{font-size:11px;color:var(--muted)} .cal .dn.su{color:var(--sun)} .cal .dn.sa{color:var(--sat)}
 .cal .mk{font-size:21px;font-weight:700;line-height:1.1}
-.m0{color:var(--ok)}.m1{color:var(--accent)}.m2{color:var(--warn)}.m3{color:var(--bad)}.m4{color:var(--star)}.m5{color:var(--accent)}.m6,.m7,.m8{color:var(--sat)}
+.m0{color:var(--muted);opacity:.55}.m1{color:var(--accent)}.m2{color:var(--warn)}.m3{color:var(--bad)}.m4{color:var(--star)}.m5{color:var(--accent)}.m6,.m7,.m8{color:var(--sat)}
 .cal button.v5,.cal button.v6,.cal button.v7,.cal button.v8{border:1.5px solid currentColor;border-color:var(--sat)}.cal button.v5{border-color:var(--accent)}
 .cal button.v9{background:var(--accent);border-color:var(--accent)}.cal button.v10,.cal button.v11,.cal button.v12{background:var(--sat);border-color:var(--sat)}
 .cal button.v9 .mk,.cal button.v10 .mk,.cal button.v11 .mk,.cal button.v12 .mk,.cal button.v9 .dn,.cal button.v10 .dn,.cal button.v11 .dn,.cal button.v12 .dn{color:#fff}
@@ -81,7 +81,7 @@ code.tok{display:block;font-size:11px;word-break:break-all;background:var(--surf
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const WD='日月火水木金土',MARK=['◯','・','△','×','★','日','夜','準','深','日','夜','準','深'],MARK_TXT=['大丈夫','できれば勤務OK','できれば休み','絶対休み','優先休み','なるべく日勤','なるべく夜勤','なるべく準夜','なるべく深夜','必ず日勤','必ず夜勤','必ず準夜','必ず深夜'];
+const WD='日月火水木金土',MARK=['◯','・','△','×','★','日','夜','準','深','日','夜','準','深'],MARK_TXT=['どちらでもOK','できれば勤務OK','できれば休み','希望休','優先休み','日勤がいい','夜勤がいい','準夜がいい','深夜がいい','業務で日勤','業務で夜勤','業務で準夜','業務で深夜'];
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2400);}
 function qrSvg(text){const q=qrcode(0,'L');q.addData(text);q.make();return q.createSvgTag({cellSize:4,margin:2,scalable:true});}
 const S={};
@@ -136,17 +136,21 @@ function renderInvite(){
   if(S.step==='cal'){
     const fx=fixedDays(),lead=S.days[0].dow,star=hasStar();const sp=S.sp||'';
     const seq=star?[0,3,4,2,5,6]:[0,3,2,5,6];
-    app.innerHTML=head+`<div class="card"><h2>2. 希望のある日をタップ（${esc(S.name)}さん）</h2>
-      ${sp?'':`<div class="legend" style="margin:0 0 4px">${seq.slice(1).map(q=>`<span><b class="m${q}">${MARK[q]}</b> ${q===3?'必ず休み':q===2?'できれば休み':q===4?'優先休み':q===5?'日勤がいい':'夜勤がいい'}</span>`).join('<span style="border:0;padding:0">→</span>')}</div>
-      <p class="note" style="margin:0">タップするたびに印が変わり、最後に空白（どちらでもOK）に戻ります。「夜」＝${inv.md==='2'?'夜勤':'準夜か深夜'}。</p>`}
-      ${sp==='l'?'<div class="box ok">有休にしたい日をタップ（もう一度で取り消し）。管理者が承認すると「有給」になります。</div>':''}
-      ${sp==='m'?`<div class="box info">「必ず」をつける日をタップ。押すたびに <b>必ず日勤 → 必ず夜勤 → なし</b>。病院の仕事があるときだけ使えます。</div><label class="f" for="mrr">病院の仕事の内容（必ず入れてください）</label><input type="text" id="mrr" maxlength="40" placeholder="例：委員会、研修、外来応援" value="${esc(S.mrText||'')}">`:''}
+    const LBL={0:'どちらでもOK',3:'希望休',4:'優先休み',2:'できれば休み',5:'日勤がいい',6:'夜勤がいい'};
+    app.innerHTML=head+`<div class="card"><h2>2. 日をタップして希望を入れる（${esc(S.name)}さん）</h2>
+      ${sp==='l'?`<div class="box ok"><b>有休を申請する日をタップ</b>（もう一度で取り消し）。管理者が承認すると「有給」になります。<button class="btn primary block" data-sp="" style="margin-top:8px">終わり（ふつうの入力に戻る）</button></div>`:
+        sp==='m'?`<div class="box info"><b>業務がある日をタップ</b>（会議・研修など、仕事で外せない日）。押すたびに <b>業務で日勤 → 業務で夜勤 → なし</b>。管理者が確認すると確定し、それまでは「日勤がいい・夜勤がいい」と同じ扱いです。
+          <label class="f" for="mrr">業務の内容（必ず入れてください）</label><input type="text" id="mrr" maxlength="40" placeholder="例：会議、研修、委員会" value="${esc(S.mrText||'')}">
+          <button class="btn primary block" data-sp="" style="margin-top:8px">終わり（ふつうの入力に戻る）</button></div>`:
+        `<div class="legend" style="margin:0 0 4px">${seq.map(q=>`<span><b class="m${q}">${MARK[q]}</b> ${LBL[q]}</span>`).join('<span style="border:0;padding:0">→</span>')}</div>
+      <p class="note" style="margin:0">タップするたびに順に変わり、また◯に戻ります。「夜」＝${inv.md==='2'?'夜勤':'準夜か深夜'}。</p>`}
       <div class="cal" style="margin-top:10px">${[...WD].map((w,i)=>`<div class="wd ${i===0?'su':i===6?'sa':''}">${w}</div>`).join('')}${'<div></div>'.repeat(lead)}
       ${S.days.map((d,i)=>{const dn=`<span class="dn ${d.dow===0||d.name?'su':d.dow===6?'sa':''}">${d.day}</span>`;
         if(fx.has(d.day))return `<button class="fx" disabled>${dn}<span class="tag">有給</span></button>`;
         if(S.lv.includes(d.day))return `<button class="lv" data-d="${i}">${dn}<span class="tag">有休申請</span></button>`;
-        const q=S.p[i];return `<button class="v${q}" data-d="${i}" aria-label="${d.day}日 ${q?MARK_TXT[q]:'どちらでもOK'}">${dn}<span class="mk m${q}">${q?MARK[q]:''}</span></button>`;}).join('')}</div>
-      <div class="row" style="margin-top:10px">${sp?`<button class="btn primary block" data-sp="">完了（ふつうの入力に戻る）</button>`:`<button class="btn" data-sp="l" style="flex:1">有休を申請する</button><button class="btn" data-sp="m" style="flex:1">必ず（病院の仕事）</button>`}</div>
+        const q=S.p[i];return `<button class="v${q}" data-d="${i}" aria-label="${d.day}日 ${MARK_TXT[q]}">${dn}<span class="mk m${q}">${MARK[q]}</span></button>`;}).join('')}</div>
+      ${sp?'':`<div class="row" style="margin-top:10px"><button class="btn" data-sp="l" style="flex:1">有休を申請する</button><button class="btn" data-sp="m" style="flex:1">業務がある日</button></div>
+      <p class="note" style="margin:6px 0 0">「業務がある日」＝会議・研修など、仕事で日勤や夜勤に入る必要がある日。</p>`}
       </div>
       ${pvCard()}
       <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">管理者にも見えません</span> アプリの中だけで使います。</p>
@@ -159,7 +163,7 @@ function renderInvite(){
     app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const i=+b.dataset.d,day=S.days[i].day,sp=S.sp||'';
       const k=S.lv.indexOf(day);
       if(sp==='l'){if(k>=0)S.lv.splice(k,1);else{S.lv.push(day);S.p[i]=0;delete S.mr[day];}}
-      else if(sp==='m'){if(!(S.mrText||'').trim()){toast('上に病院の仕事の内容を入れてください');return;}
+      else if(sp==='m'){if(!(S.mrText||'').trim()){toast('上に業務の内容を入れてください');return;}
         if(k>=0)S.lv.splice(k,1);const ms=[0,9,10],j=ms.indexOf(S.p[i]);S.p[i]=ms[(j<0?1:j+1)%3];
         if(S.p[i]>=9)S.mr[day]=S.mrText.trim();else delete S.mr[day];}
       else{if(k>=0){S.lv.splice(k,1);S.p[i]=0;}
