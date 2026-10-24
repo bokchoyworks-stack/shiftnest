@@ -829,6 +829,21 @@ function ruleRow(r,i){
   return '<div class="rule '+(r.must?'must':'soft')+'"><div class="rule-body">'+body+'</div><div class="rule-ctl"><div class="seg sm"><button data-rm="'+i+'.1" aria-pressed="'+r.must+'">必ず</button><button data-rm="'+i+'.0" aria-pressed="'+(!r.must)+'">なるべく</button></div><button class="btn sm" data-rdel="'+i+'">削除</button></div></div>';
 }
 function groupOptions(sel){return state.groups.map((g,i)=>`<option value="${i}" ${i===sel?'selected':''}>${esc(g.code)} ${esc(g.desc)}</option>`).join('');}
+/* 届いた申請を受け取る（iPhone版 acceptPending / applyAnswer と同じ中身） */
+function pcAcceptPending(pp){
+  const x=state.extra||(state.extra={});let id;
+  if(pp.kind==='device'){const st=staffById(pp.staffId);if(!st)return;id=st.id;st.keyHash=pp.kh||null;}
+  else{id=addStaff(pp.name,pp.gi==null?0:pp.gi,null);const st=staffById(id);st.keyHash=pp.kh||null;}
+  const ym=pp.ym||state.ym,arr=[...(pp.p||'')].map(c=>/\d/.test(c)?+c:c.charCodeAt(0)-87);
+  if(arr.length){(state.prefsByYm[ym]=state.prefsByYm[ym]||{})[id]=arr;}
+  state.ng=(state.ng||[]).filter(a=>a[0]!==id);(pp.ng||[]).slice(0,2).forEach(o=>{if(o!==id)state.ng.push([id,o]);});
+  (pp.lv||[]).forEach(d=>{const date=dkey(ym,d);if(!state.leaveReq.some(l=>l.id===id&&l.date===date))state.leaveReq.push({id,date,status:'pending'});});
+  if(pp.rk)(x.reqKeys=x.reqKeys||{})[id]=pp.rk;
+  if(pp.em&&pp.em.includes('@'))(x.contacts=x.contacts||{})[id]=pp.em;
+  if(pp.pv&&pp.pv.length===2)((x.prevEnd=x.prevEnd||{})[ym]=x.prevEnd[ym]||{})[id]=pp.pv;
+  const mp=ym+'-';x.mustReq=(x.mustReq||[]).filter(m=>!(m.id===id&&m.date.startsWith(mp)));
+  arr.forEach((q,i)=>{if(q>=9)x.mustReq.push({id,date:dkey(ym,i+1),code:q,reason:String((pp.mr||{})[i+1]||'').slice(0,60),status:'pending'});});
+}
 function addStaff(name,gi,from){const id=state.nextId++;state.staff.push({id,name,gi:Math.min(gi,state.groups.length-1),night:true,offAdj:0,events:from&&from>dkey(state.ym,1)?[{type:'nyushoku',from}]:[]});return id;}
 const DEMO_NAMES=['今井','内田','大野','岡田','金子','近藤','坂本','杉山','千葉','中島','西村','福田','藤井','三浦','宮本','村上'];
 function secHead(n,title,sub){return '<div class="sec-head"><span class="sec-n">'+n+'</span><div><h3>'+title+'</h3>'+(sub?'<p>'+sub+'</p>':'')+'</div></div>';}
@@ -949,8 +964,10 @@ function renderSetup(){
       ${lr.map(x=>`<div class="pend-row"><span class="nm">${esc(staffById(x.id).name)}</span><span class="note">${+x.date.slice(5,7)}/${+x.date.slice(8)}（${WD[new Date(x.date).getDay()]}）</span><button class="btn sm primary" data-lvok="${x.i}">承認</button><button class="btn sm" data-lvng="${x.i}">却下</button></div>`).join('')}
     </div>`:'';})()}
     ${state.pending.length?`<div class="pend">
-      <div class="pend-head"><b>QRから届いた登録 ${state.pending.length}件</b><span class="note">区分を選んで「名簿に入れる」。知らない人は「消す」。</span><button class="btn sm" id="pendAll">全員入れる</button></div>
-      ${state.pending.map((pp,i)=>`<div class="pend-row"><span class="nm">${esc(pp.name)}</span><span class="note">${esc(pp.at)}に登録</span><select id="pg${i}" data-pg="${i}" aria-label="${esc(pp.name)}の区分">${groupOptions(pp.gi)}</select><button class="btn sm primary" data-pin="${i}">名簿に入れる</button><button class="btn sm" data-pdel="${i}">消す</button></div>`).join('')}
+      <div class="pend-head"><b>届いた申請 ${state.pending.length}件</b><span class="note">はじめての人：区分を選んで「承認」。一緒に届いた希望がそのまま入ります。別のスマホから：本人と確かめてから「受け取る」。</span></div>
+      ${state.pending.map((pp,i)=>pp.kind==='device'
+        ?`<div class="pend-row"><span class="nm">${esc(pp.name)}</span><span class="chip" style="color:var(--warn)">別のスマホから</span><span class="note">${pp.pinOK?'暗証番号は合っています':'暗証番号が登録時と違います'}・${esc(pp.at)}</span><button class="btn sm primary" data-pin="${i}">本人と確認した・受け取る</button><button class="btn sm" data-pdel="${i}">受け取らない</button></div>`
+        :`<div class="pend-row"><span class="nm">${esc(pp.name)}</span><span class="note">はじめての登録・${esc(pp.at)}</span><select id="pg${i}" data-pg="${i}" aria-label="${esc(pp.name)}の区分">${groupOptions(pp.gi)}</select><button class="btn sm primary" data-pin="${i}">承認して名簿に入れる</button><button class="btn sm" data-pdel="${i}">消す</button></div>`).join('')}
     </div>`:''}
     <div class="staff-list">
       ${inM.map(({st,f})=>{const bd=monthBadges(st,f);const open=state.openEv===st.id;return `<div class="srow ${open?'open':''}">
@@ -1077,10 +1094,11 @@ $('#p-setup').addEventListener('click',e=>{
   if(t.closest('#pendDemo')){const used=new Set(state.staff.map(x=>x.name).concat(state.pending.map(x=>x.name)));const nm=DEMO_NAMES.find(x=>!used.has(x))||('新人'+state.nextId);
     const d=new Date();state.pending.push({name:nm,gi:4,at:'今日 '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')});saveLocal();renderSetup();toast(nm+'さんがQRから登録しました');return;}
   const pin=t.closest('[data-pin]');
-  if(pin){const i=+pin.dataset.pin,pp=state.pending[i];addStaff(pp.name,pp.gi,null);state.pending.splice(i,1);changed();renderSetup();toast(pp.name+'さんを名簿に入れました');return;}
+  if(pin){const i=+pin.dataset.pin,pp=state.pending[i];if(!confirm(pp.kind==='device'?pp.name+'さんの別のスマホからの希望を受け取りますか？':pp.name+'さんを承認しますか？'))return;
+    pcAcceptPending(pp);state.pending.splice(i,1);changed();renderSetup();toast(pp.kind==='device'?'受け取りました':pp.name+'さんを名簿に入れました');return;}
   const pdl=t.closest('[data-pdel]');
   if(pdl){state.pending.splice(+pdl.dataset.pdel,1);saveLocal();renderSetup();return;}
-  if(t.closest('#pendAll')){const n=state.pending.length;state.pending.forEach(pp=>addStaff(pp.name,pp.gi,null));state.pending=[];changed();renderSetup();toast(n+'人を名簿に入れました');return;}
+
   if(t.closest('#addDo')){const name=$('#newName').value.trim();if(!name){toast('ニックネームを入れてください');return;}
     addStaff(name,+$('#newGrp').value,$('#newFrom').value);
     state.addOpen=false;changed();renderSetup();toast(name+'さんを追加しました');return;}
@@ -1787,7 +1805,7 @@ let idleLeft=IDLE_MIN*60,idleTimer=null,scanStop=null,cycleTimer=null;
 function exportData(){
   const prefs={};Object.keys(state.prefsByYm).forEach(ym=>{prefs[ym]={};Object.keys(state.prefsByYm[ym]).forEach(id=>{const a=state.prefsByYm[ym][id];if(a.some(Boolean))prefs[ym][id]=a;});});
   return Object.assign({},state.extra||{},{v:1,ward:state.ward,mode:state.mode,ym:state.ym,yearEnd:state.yearEnd,req:state.req,rules:state.rules,groups:state.groups,combo:state.combo,
-    staff:state.staff.map(s=>({id:s.id,name:s.name,gi:s.gi,kind:s.kind,dv:s.dv||0,offAdj:s.offAdj||0,events:s.events,nMin:s.nMin,nMax:s.nMax,dMax:s.dMax,limitAgreed:s.limitAgreed})),nextId:state.nextId,prefs,ng:state.ng,
+    staff:state.staff.map(s=>({id:s.id,name:s.name,gi:s.gi,kind:s.kind,dv:s.dv||0,offAdj:s.offAdj||0,events:s.events,nMin:s.nMin,nMax:s.nMax,dMax:s.dMax,limitAgreed:s.limitAgreed,keyHash:s.keyHash||undefined})),nextId:state.nextId,prefs,ng:state.ng,
     leaveReq:state.leaveReq,credits:state.credits,pending:state.pending,history:state.history,editedOnPC:new Date().toISOString()});
 }
 function importData(d){
@@ -1795,7 +1813,7 @@ function importData(d){
   const keep=['v','ward','mode','ym','yearEnd','req','rules','groups','combo','staff','nextId','prefs','ng','leaveReq','credits','pending','history'];
   state.extra={};Object.keys(d).forEach(k=>{if(!keep.includes(k))state.extra[k]=d[k];});
   ['ward','mode','ym','yearEnd','req','rules','groups','combo','nextId','ng','leaveReq','credits','pending','history'].forEach(k=>{if(d[k]!==undefined)state[k]=d[k];});
-  state.staff=d.staff.map(s=>({id:s.id,name:s.name,gi:s.gi||0,kind:s.kind||'all',night:(s.kind||'all')!=='day',dv:s.dv||0,offAdj:s.offAdj||0,events:s.events||[],nMin:s.nMin??null,nMax:s.nMax??null,dMax:s.dMax??null,limitAgreed:!!s.limitAgreed}));
+  state.staff=d.staff.map(s=>({id:s.id,name:s.name,gi:s.gi||0,kind:s.kind||'all',night:(s.kind||'all')!=='day',dv:s.dv||0,offAdj:s.offAdj||0,events:s.events||[],nMin:s.nMin??null,nMax:s.nMax??null,dMax:s.dMax??null,limitAgreed:!!s.limitAgreed,keyHash:s.keyHash||null}));
   state.prefsByYm={};Object.keys(d.prefs||{}).forEach(ym=>{state.prefsByYm[ym]={};Object.keys(d.prefs[ym]).forEach(id=>{state.prefsByYm[ym][id]=d.prefs[ym][id].slice();});});
   ['3','2'].forEach(md=>['weekday','holiday'].forEach(w=>{const o=state.req[md]&&state.req[md][w];if(o){if(o.F===undefined)o.F=0;if(o.L===undefined)o.L=0;}}));
   state.result=null;state.accepted=[];state.loaded=true;
