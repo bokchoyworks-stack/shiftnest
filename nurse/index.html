@@ -75,6 +75,20 @@ code.tok{display:block;font-size:11px;word-break:break-all;background:var(--surf
 .hist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .hist div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:var(--surface)}
 #print{display:none}
+.steps{display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:12px;font-weight:700}
+.steps span{padding:3px 9px;border-radius:99px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.steps span.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.steps span.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.choice{display:flex;gap:12px;align-items:center;text-align:left;width:100%;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px;margin-top:10px}
+.choice b{display:block;font-size:16px}.choice small{color:var(--muted);font-size:13px}
+.choice .ic{font-size:26px;flex:none;width:34px;text-align:center}
+.me{display:flex;gap:12px;align-items:center;background:var(--accent-soft);border-radius:14px;padding:14px}
+.me .av{width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
+.flow{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.flow div{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.flow i{font-style:normal;flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:13px}
+.gdots{display:flex;gap:6px;justify-content:center;margin:12px 0}.gdots b{width:8px;height:8px;border-radius:50%;background:var(--line)}.gdots b.on{background:var(--ink)}
+.linkbtn{border:0;background:none;padding:4px 0;color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:3px;font-size:14px}
 @media print{body{background:#fff;color:#000;padding:0}main,.toast{display:none!important}#print{display:block;font-size:12pt;color:#000}
 #print h1{font-size:16pt;margin:0 0 4pt}#print table{border-collapse:collapse;width:100%;margin-top:8pt}#print td,#print th{border:.5pt solid #888;padding:3pt 5pt;font-size:10.5pt;text-align:left}
 #print .cn{font-size:18pt;font-weight:800;letter-spacing:.06em}}
@@ -129,6 +143,30 @@ function recCard(r,title){return `<div class="rec"><div class="note" style="colo
   <p class="note" style="margin:6px 0 0">「PDF・印刷」→ 共有 →「ファイルに保存」でPDFになります。管理者のアプリにも同じ確認番号が残ります。</p></div>`;}
 function histHtml(){const a=recList().filter(r=>r.ym===S.inv.ym);if(!a.length)return '';
   return `<details style="margin-top:10px"><summary class="note">この月に送った記録（${a.length}件）</summary><div class="hist">${a.map(r=>`<div><b>${esc(r.at)}</b>　${esc(r.name)}　<span style="font-family:ui-monospace,Menlo,monospace">${esc(r.cn)}</span><br>${esc(r.sum)}<br><button class="btn" data-print="${esc(r.cn)}" style="padding:6px 10px;margin-top:4px;font-size:13px">控えを保存</button></div>`).join('')}</div></details>`;}
+/* ---------- 本人確認：このスマホが本人を覚える（本人キー）＋自分で決めた暗証番号 ---------- */
+function meKey(){return 'sn-me-'+String(S.inv.k||S.inv.w).slice(-16);}
+function normName(n){return String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();}
+async function sha(b64){const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(b64));return SNCodec.b64u.enc(new Uint8Array(d));}
+async function makeMe(name,pin,id){const r=new Uint8Array(32);crypto.getRandomValues(r);const sk=SNCodec.b64u.enc(r);
+  return {name,id:id||0,sk,kh:await sha(sk),rk:SNCodec.b64u.enc(await SNCodec.reqKey(pin,name)),at:stampNow()};}
+function rosterIdByName(n){const t=normName(n),hit=(S.inv.s||[]).filter(([,x])=>normName(x)===t);return hit.length===1?hit[0]:null;}
+function stepBar(cur){const L=['本人確認','希望を入れる','送る'];return `<div class="steps">${L.map((t,i)=>`<span class="${i===cur?'on':i<cur?'ok':''}">${i<cur?'✓ ':(i+1)+'. '}${t}</span>`).join('')}</div>`;}
+const PINRE=/^\d{4}$/;
+/* はじめての人向けの説明（4枚） */
+const GUIDE=[
+  ['このページでできること','<p>来月の勤務の<b>希望</b>（休みたい日・勤務したい日）を、管理者に送ります。<b>2分</b>で終わります。</p><div class="box info">入れた内容は暗号になって管理者のアプリにだけ届きます。ほかの人やアプリの開発者には見えません。</div>'],
+  ['流れ（3ステップ）','<div class="flow"><div><i>1</i><span><b>本人確認</b>：はじめてだけ、名前と暗証番号（自分で決める数字4けた）を入れます。2回目からはこのスマホが覚えています。</span></div><div><i>2</i><span><b>希望を入れる</b>：カレンダーの日をタップ。</span></div><div><i>3</i><span><b>送る</b>：LINEやメールで管理者へ。控え（確認番号）が残ります。</span></div></div>'],
+  ['例：15日を休みたい、20日はできれば休み','<p>カレンダーの <b>15日</b> を1回タップ → <b style="color:var(--bad)">×</b>（希望休）<br><b>20日</b> を2回タップ → <b style="color:var(--warn)">△</b>（できれば休み）</p><p>タップするたびに ◯ → × → △ → 日 → 夜 → ◯ と変わります。何もしない日は「◯ どちらでもOK」です。</p>'],
+  ['暗証番号について','<p>自分で決める<b>数字4けた</b>です（例：誕生日以外の番号）。</p><ul style="padding-left:20px;margin:6px 0"><li>スマホを変えたときに、本人だと確かめるのに使います</li><li>管理者からの「お願い」を開くのに使います</li></ul><div class="box warn">他人に教えないでください。忘れても大丈夫：このスマホなら変えられます。別のスマホなら、管理者が本人と確かめて切り替えます。</div>']
+];
+function renderGuide(head){const i=S.gi||0,g=GUIDE[i];
+  $('#app').innerHTML=head+`<div class="card"><p class="note" style="margin:0">使い方 ${i+1} / ${GUIDE.length}</p><h2 style="font-size:19px;margin:4px 0 10px">${g[0]}</h2>${g[1]}
+    <div class="gdots">${GUIDE.map((_,k)=>`<b class="${k===i?'on':''}"></b>`).join('')}</div>
+    <div class="row" style="flex-wrap:nowrap">${i>0?'<button class="btn" id="gPrev" style="flex:1">戻る</button>':''}<button class="btn primary" id="gNext" style="flex:2">${i<GUIDE.length-1?'次へ':'はじめる'}</button></div>
+    <div style="text-align:center;margin-top:8px"><button class="linkbtn" id="gSkip">説明をとばす</button></div></div>`;
+  const done=()=>{store.set('sn-guide-seen',1);S.gi=0;S.step='who';render();window.scrollTo(0,0);};
+  $('#gNext').onclick=()=>{if(i<GUIDE.length-1){S.gi=i+1;render();}else done();};
+  const pv=$('#gPrev');if(pv)pv.onclick=()=>{S.gi=i-1;render();};$('#gSkip').onclick=done;}
 function bindPrint(){document.querySelectorAll('[data-print]').forEach(b=>b.onclick=()=>{const r=recList().find(x=>x.cn===b.dataset.print);if(r)printRec(r);});}
 
 /* ---------- 招待：希望入力 ---------- */
@@ -138,8 +176,14 @@ function setupInvite(){
   const draft=store.get(draftKey())||{};
   S.step=draft.step&&draft.step!=='done'?draft.step:'who';
   S.id=draft.id||0;S.name=draft.name||'';S.p=draft.p||new Array(S.days.length).fill(0);
-  S.lv=draft.lv||[];S.ng=draft.ng||[];S.pv=draft.pv||[-1,-1];S.mr=draft.mr||{};S.mrText='';S.em=store.get('sn-em')||'';S.mode='pref';S.pin='';
+  S.lv=draft.lv||[];S.ng=draft.ng||[];S.pv=draft.pv||[-1,-1];S.mr=draft.mr||{};S.mrText='';S.em=store.get('sn-em')||'';S.mode='pref';
+  S.me=store.get(meKey());S.whoMode='';
+  if(S.me){S.name=S.me.name;S.id=S.me.id||0;}
+  if(S.step==='cal'&&!S.me)S.step='who';
+  if(S.step==='who'&&!S.me&&!store.get('sn-guide-seen'))S.step='guide';
 }
+/* 名簿が読めたら、自分のIDを名前から見つける（承認された後の月） */
+function linkMeToRoster(){if(!S.me||S.me.id)return;const hit=rosterIdByName(S.me.name);if(hit){S.me.id=hit[0];store.set(meKey(),S.me);S.id=hit[0];}}
 /* 下書きは「職場（管理者の鍵）×月」ごとに分ける。同じ職場名の別施設と混ざらない */
 function draftKey(){return 'sn-draft-'+S.inv.ym+'-'+String(S.inv.k||S.inv.w).slice(-24);}
 function saveDraft(){store.set(draftKey(),{step:S.step,id:S.id,name:S.name,p:S.p,lv:S.lv,ng:S.ng,pv:S.pv,mr:S.mr});}
@@ -148,34 +192,70 @@ function hasStar(){return (S.inv.cr||[]).includes(S.id);}
 function renderInvite(){
   const inv=S.inv,[,mm]=inv.ym.split('-').map(Number),app=$('#app');
   const head=`<div><h1>${mm}月の勤務の希望</h1><p class="sub">${esc(inv.w)}・締切 ${esc(inv.dl||'')}</p></div>`;
+  if(S.step==='guide')return renderGuide(head);
   if(S.step==='who'){
-    app.innerHTML=head+`<div class="card"><h2>1. あなたの名前</h2>
-      <label class="f" for="who">名簿から選ぶ</label>
-      <select id="who"><option value="">選んでください</option>${(inv.s||[]).map(([id,n])=>`<option value="${id}" ${id===S.id?'selected':''}>${esc(n)}</option>`).join('')}<option value="new" ${S.id===0&&S.name?'selected':''}>名簿にない（新しく登録）</option></select>
-      <div id="newBox" ${S.id===0&&S.name?'':'hidden'}><label class="f" for="nm">勤務表に載せる名前（苗字やニックネーム）</label><input type="text" id="nm" maxlength="10" value="${esc(S.id?'':S.name)}"></div>
-      <label class="f" for="pin">合言葉（数字4けた・自分で決める）</label>
-      <input type="tel" id="pin" inputmode="numeric" maxlength="4" placeholder="例：2580" autocomplete="off">
-      <p class="note">合言葉は、あとで管理者から「お願い」が届いたときに、あなただけが読むために使います。どこにも送られません。</p>
-      <label class="f" for="em">連絡用メール（任意）</label>
-      <input type="email" id="em" autocomplete="email" placeholder="例：name@example.com" value="${esc(S.em||'')}">
-      <label class="note" style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" id="emok" ${S.em?'checked':''} style="margin-top:4px"> このアドレスを職場の管理者に渡し、勤務の案内メールに使うことに同意します（入れた人だけ）</label>
-      <p class="note">入れておくと、次の月から案内がメールで届きます。LINEで受け取る人は空欄でかまいません。アドレスは管理者のiPhoneにだけ保存され、アプリの開発者には届きません。</p>
-      <button class="btn primary block" id="next1">次へ</button>${histHtml()}</div>`;
-    $('#who').onchange=e=>{$('#newBox').hidden=e.target.value!=='new';};bindPrint();
-    $('#next1').onclick=()=>{const v=$('#who').value;const pin=$('#pin').value.trim();
-      if(!v){toast('名前を選んでください');return;}
-      if(v==='new'){const n=$('#nm').value.trim();if(!n){toast('名前を入れてください');return;}S.id=0;S.name=n;}
-      else{S.id=+v;S.name=(inv.s.find(x=>x[0]===S.id)||[0,''])[1];}
-      if(!/^\d{4}$/.test(pin)){toast('合言葉は数字4けたです');return;}
-      S.em=($('#em').value||'').trim();if(S.em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.em)){toast('メールアドレスを確認してください');return;}if(S.em&&!$('#emok').checked){toast('メールを使うときは同意にチェックしてください');return;}store.set('sn-em',S.em);
-      S.pin=pin;S.step='cal';saveDraft();render();window.scrollTo(0,0);};
+    linkMeToRoster();
+    const help='<div style="text-align:right;margin-top:6px"><button class="linkbtn" id="toGuide">使い方を見る</button></div>';
+    if(S.me&&S.whoMode!=='pin'){
+      app.innerHTML=head+stepBar(0)+`<div class="card"><div class="me"><div class="av">${esc([...S.me.name][0]||'?')}</div><div><b style="font-size:18px">${esc(S.me.name)}さん</b><div class="note">このスマホで本人確認ずみです</div></div></div>
+        <button class="btn primary block" id="goCal" style="margin-top:12px">希望を入力する</button>
+        <label class="f" for="em">連絡用メール（任意）</label><input type="email" id="em" autocomplete="email" placeholder="例：name@example.com" value="${esc(S.em||'')}">
+        <label class="note" style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" id="emok" ${S.em?'checked':''} style="margin-top:4px"> このアドレスを職場の管理者に渡し、勤務の案内メールに使うことに同意します</label>
+        <div class="row" style="justify-content:space-between;margin-top:10px"><button class="linkbtn" id="toPin">暗証番号を変える</button><button class="linkbtn" id="notMe">${esc(S.me.name)}さんではない</button></div>${help}${histHtml()}</div>`;
+      $('#goCal').onclick=()=>{S.em=($('#em').value||'').trim();if(S.em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.em)){toast('メールアドレスを確かめてください');return;}if(S.em&&!$('#emok').checked){toast('メールを使うときは同意にチェックしてください');return;}store.set('sn-em',S.em);
+        S.name=S.me.name;S.id=S.me.id||0;S.step='cal';saveDraft();render();window.scrollTo(0,0);};
+      $('#toPin').onclick=()=>{S.whoMode='pin';render();};
+      $('#notMe').onclick=()=>{if(!confirm('このスマホの本人確認を消して、別の人として入力しますか？\n（'+S.me.name+'さんは、次に使うとき名前と暗証番号を入れ直すことになります）'))return;
+        try{localStorage.removeItem(meKey());}catch(e){}S.me=null;S.whoMode='';render();};
+    }else if(S.me&&S.whoMode==='pin'){
+      app.innerHTML=head+`<div class="card"><h2>暗証番号を変える</h2>
+        <label class="f" for="op">いまの暗証番号</label><input type="tel" id="op" inputmode="numeric" maxlength="4" autocomplete="off">
+        <label class="note" style="display:flex;gap:8px;margin-top:6px"><input type="checkbox" id="forgot"> 忘れた（このスマホなので、そのまま新しくできます）</label>
+        <label class="f" for="np1">新しい暗証番号（数字4けた）</label><input type="tel" id="np1" inputmode="numeric" maxlength="4" autocomplete="off">
+        <label class="f" for="np2">もう一度</label><input type="tel" id="np2" inputmode="numeric" maxlength="4" autocomplete="off">
+        <button class="btn primary block" id="pinGo" style="margin-top:12px">変更する</button><button class="btn block" id="pinBack" style="margin-top:8px">やめる</button>
+        <p class="note">新しい暗証番号は、次に希望を送ったときに管理者のアプリにも伝わります。</p></div>`;
+      $('#forgot').onchange=e=>{$('#op').disabled=e.target.checked;};
+      $('#pinBack').onclick=()=>{S.whoMode='';render();};
+      $('#pinGo').onclick=async()=>{const n1=$('#np1').value.trim(),n2=$('#np2').value.trim();
+        if(!$('#forgot').checked){const old=SNCodec.b64u.enc(await SNCodec.reqKey($('#op').value.trim(),S.me.name));if(old!==S.me.rk){toast('いまの暗証番号が違います');return;}}
+        if(!PINRE.test(n1)){toast('新しい暗証番号は数字4けたです');return;}if(n1!==n2){toast('2回の入力が違います');return;}
+        if(!confirm('暗証番号を変えますか？'))return;
+        S.me.rk=SNCodec.b64u.enc(await SNCodec.reqKey(n1,S.me.name));store.set(meKey(),S.me);S.whoMode='';toast('暗証番号を変えました');render();};
+    }else if(!S.whoMode){
+      app.innerHTML=head+stepBar(0)+`<div class="card"><h2>あなたはどちらですか？</h2>
+        <button class="choice" id="cNew"><span class="ic">🆕</span><span><b>はじめて使う</b><small>名前と暗証番号を登録して、そのまま希望も入れます。管理者が承認すると登録されます。</small></span></button>
+        <button class="choice" id="cOld"><span class="ic">📱</span><span><b>前にも使った（スマホを変えた など）</b><small>名前と暗証番号で本人確認します。管理者が確かめてから受け取ります。</small></span></button>${help}${histHtml()}</div>`;
+      $('#cNew').onclick=()=>{S.whoMode='new';render();};$('#cOld').onclick=()=>{S.whoMode='old';render();};
+    }else{
+      const isNew=S.whoMode==='new';
+      app.innerHTML=head+stepBar(0)+`<div class="card"><h2>${isNew?'はじめての登録':'前にも使った人'}</h2>
+        <label class="f" for="nm">${isNew?'勤務表に載せる名前（苗字やニックネーム）':'登録した名前'}</label><input type="text" id="nm" maxlength="10" autocomplete="off" placeholder="例：山田">
+        <label class="f" for="p1">${isNew?'暗証番号（自分で決める数字4けた）':'暗証番号（数字4けた）'}</label><input type="tel" id="p1" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="例：2580">
+        ${isNew?'<label class="f" for="p2">暗証番号をもう一度</label><input type="tel" id="p2" inputmode="numeric" maxlength="4" autocomplete="off">':''}
+        <label class="f" for="em">連絡用メール（任意）</label><input type="email" id="em" autocomplete="email" placeholder="例：name@example.com" value="${esc(S.em||'')}">
+        <label class="note" style="display:flex;gap:8px;align-items:flex-start;margin-top:6px"><input type="checkbox" id="emok" ${S.em?'checked':''} style="margin-top:4px"> このアドレスを職場の管理者に渡し、勤務の案内メールに使うことに同意します（入れた人だけ）</label>
+        <p class="note">${isNew?'暗証番号は、スマホを変えたときの本人確認と、管理者からの「お願い」を開くときに使います。他人に教えないでください。':'暗証番号を忘れた人も、そのまま新しい番号を入れて進めてください。管理者が本人と確かめてから受け取ります。'}</p>
+        <button class="btn primary block" id="next1">次へ（希望を入れる）</button><button class="btn block" id="back1" style="margin-top:8px">戻る</button></div>`;
+      $('#back1').onclick=()=>{S.whoMode='';render();};
+      $('#next1').onclick=async()=>{const n=$('#nm').value.trim(),p1=$('#p1').value.trim();
+        if(!n){toast('名前を入れてください');return;}if(!PINRE.test(p1)){toast('暗証番号は数字4けたです');return;}
+        if(isNew&&p1!==$('#p2').value.trim()){toast('暗証番号が2回で違います');return;}
+        S.em=($('#em').value||'').trim();if(S.em&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.em)){toast('メールアドレスを確かめてください');return;}if(S.em&&!$('#emok').checked){toast('メールを使うときは同意にチェックしてください');return;}store.set('sn-em',S.em);
+        let id=0,name=n;
+        if(isNew){if(rosterIdByName(n)&&!confirm('「'+n+'」さんはもう名簿にいます。\n同じ名前の別の人として登録しますか？（本人なら「キャンセル」→「前にも使った」へ）'))return;}
+        else{const hit=rosterIdByName(n);if(!hit){toast('名簿に「'+n+'」さんが見つかりません。名前を確かめてください');return;}id=hit[0];name=hit[1];}
+        S.me=await makeMe(name,p1,id);store.set(meKey(),S.me);S.name=name;S.id=id;S.whoMode='';S.step='cal';saveDraft();render();window.scrollTo(0,0);};
+    }
+    const tg=$('#toGuide');if(tg)tg.onclick=()=>{S.gi=0;S.step='guide';render();};
+    bindPrint();
     return;
   }
   if(S.step==='cal'){
     const fx=fixedDays(),lead=S.days[0].dow,star=hasStar();const sp=S.sp||'';
     const seq=star?[0,3,4,2,5,6]:[0,3,2,5,6];
     const LBL={0:'どちらでもOK',3:'希望休',4:'優先休み',2:'できれば休み',5:'日勤がいい',6:'夜勤がいい'};
-    app.innerHTML=head+`<div class="card"><h2>2. 日をタップして希望を入れる（${esc(S.name)}さん）</h2>
+    app.innerHTML=head+stepBar(1)+`<div class="card"><h2>日をタップして希望を入れる（${esc(S.name)}さん）</h2>
       ${sp==='l'?`<div class="box ok"><b>有休を申請する日をタップ</b>（もう一度で取り消し）。管理者が承認すると「有給」になります。<button class="btn primary block" data-sp="" style="margin-top:8px">終わり（ふつうの入力に戻る）</button></div>`:
         sp==='m'?`<div class="box info"><b>業務がある日をタップ</b>（会議・研修など、仕事で外せない日）。押すたびに <b>業務で日勤 → 業務で夜勤 → なし</b>。管理者が確認すると確定し、それまでは「日勤がいい・夜勤がいい」と同じ扱いです。
           <label class="f" for="mrr">業務の内容（必ず入れてください）</label><input type="text" id="mrr" maxlength="40" placeholder="例：会議、研修、委員会" value="${esc(S.mrText||'')}">
@@ -191,10 +271,10 @@ function renderInvite(){
       <p class="note" style="margin:6px 0 0">「業務がある日」＝会議・研修など、仕事で日勤や夜勤に入る必要がある日。</p>`}
       </div>
       ${pvCard()}
-      <div class="card"><h2>3. 夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">管理者にも見えません</span> アプリの中だけで使います。</p>
+      <div class="card"><h2>夜勤で一緒にならないようにしたい人（任意・2人まで）</h2><p class="note" style="margin:-4px 0 8px"><span class="lock">管理者にも見えません</span> アプリの中だけで使います。</p>
       <div class="chips">${(inv.s||[]).filter(([id])=>id!==S.id).map(([id,n])=>`<button data-ng="${id}" aria-pressed="${S.ng.includes(id)}">${esc(n)}</button>`).join('')}</div></div>
       <button class="btn primary block" id="send">管理者に送る</button>
-      <button class="btn block" id="back">名前・合言葉からやり直す</button>
+      <button class="btn block" id="back">本人確認の画面に戻る</button>
       <p class="note">入力した内容は暗号化され、職場の管理者のiPhoneでだけ開けます。アプリの開発者には一切届きません。<a href="../privacy/">プライバシーについて</a></p>`;
     app.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{S.sp=b.dataset.sp;render();});
     {const mrr=$('#mrr');if(mrr)mrr.oninput=e=>{S.mrText=e.target.value;};}
@@ -213,19 +293,19 @@ function renderInvite(){
     app.querySelectorAll('[data-pv]').forEach(el=>el.onchange=()=>{S.pv[+el.dataset.pv]=+el.value;saveDraft();});
     $('#back').onclick=()=>{S.step='who';render();};
     $('#send').onclick=async()=>{
-      if(!S.pin){S.step='who';render();toast('合言葉をもう一度入れてください');return;}
+      if(!S.me){S.step='who';render();toast('先に本人確認をしてください');return;}
       {const prev=lastRecFor(inv.ym,S.name);if(!confirm('管理者に送りますか？'+(prev?'\n\n前回は '+prev.at+' に送っています。送り直すと、最後に送った内容が使われます。':'')))return;}
       $('#send').disabled=true;$('#send').textContent='暗号化しています…';
-      try{const rk=SNCodec.b64u.enc(await SNCodec.reqKey(S.pin,S.name));
+      try{const rk=S.me.rk,kh=S.me.kh;S.name=S.me.name;S.id=S.me.id||0;
         const cn=newCn(),at=stampNow();
-        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,r:inv.r||0,cn,at,id:S.id,name:S.name,p:S.p.map(q=>q<10?String(q):String.fromCharCode(87+q)).join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined,em:S.em||undefined,mr:(()=>{const o={};S.p.forEach((q,i)=>{const dd=S.days[i].day;if(q>=9&&S.mr[dd])o[dd]=S.mr[dd];});return Object.keys(o).length?o:undefined;})()});
+        S.token=await SNCodec.sealToPub(inv.k,{t:'ans',ym:inv.ym,r:inv.r||0,cn,at,kh,nw:S.me.id?undefined:1,id:S.id,name:S.name,p:S.p.map(q=>q<10?String(q):String.fromCharCode(87+q)).join(''),ng:S.ng,lv:S.lv.slice().sort((a,b)=>a-b),rk,pv:inv.pv&&S.pv.every(x=>x>=0)?S.pv:undefined,em:S.em||undefined,mr:(()=>{const o={};S.p.forEach((q,i)=>{const dd=S.days[i].day;if(q>=9&&S.mr[dd])o[dd]=S.mr[dd];});return Object.keys(o).length?o:undefined;})()});
         const mk=['','・','できれば休み','希望休','優先休み','日勤がいい',inv.md==='2'?'夜勤がいい':'夜勤がいい','準夜がいい','深夜がいい'];
         const days=[];S.days.forEach((d,i)=>{const q=S.p[i];if(S.lv.includes(d.day))days.push([d.day,'有休申請']);else if(q>=9)days.push([d.day,MARK_TXT[q]+(S.mr[d.day]?'（'+S.mr[d.day]+'）':'')]);else if(q>1)days.push([d.day,mk[q]]);});
         S.rec={ym:inv.ym,w:inv.w,name:S.name,cn,at,sum:summarize(S.p,S.lv.length),days};addRec(S.rec);
         S.step='done';saveDraft();render();window.scrollTo(0,0);}catch(e){toast('送れませんでした：'+e.message);$('#send').disabled=false;$('#send').textContent='管理者に送る';}};
     return;
   }
-  if(S.step==='done'){renderSend(head,'回答ができました','もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
+  if(S.step==='done'){renderSend(head+stepBar(2),'回答ができました',(S.me&&!S.me.id?'<b>はじめての登録です。管理者が承認すると、この希望がそのまま入ります。</b><br>':'')+'もう一度直したいときは「直す」から。最後に送ったものが使われます。',()=>{S.step='cal';render();});
     const r=S.rec||lastRecFor(inv.ym,S.name);if(r){$('#app').insertAdjacentHTML('beforeend',`<div class="card">${recCard(r,'送信の控え（言った・言わないを防ぐため、保存しておくと安心です）')}${histHtml()}</div>`);bindPrint();}}
 }
 function workSeq(){const b=S.inv.md==='2'?[5,6]:[5,7,8];return [0,...b.map(q=>S.must?q+4:q)];}
@@ -258,16 +338,23 @@ function renderSend(head,title,foot,onBack){
 /* ---------- お願いリンク ---------- */
 function renderReq(){
   const inv=S.inv,[,mm]=inv.ym.split('-').map(Number),app=$('#app');
-  const head=`<div><h1>${mm}月の勤務表についてのお願い</h1><p class="sub">名前を選んで合言葉を入れてください。あなたへのお願いがあるときだけ表示されます。</p></div>`;
+  const head=`<div><h1>${mm}月の勤務表についてのお願い</h1><p class="sub">あなたへのお願いがあるときだけ表示されます。</p></div>`;
   if(!S.reqStep){
-    app.innerHTML=head+`<div class="card"><label class="f" for="who">あなたの名前</label><select id="who"><option value="">選んでください</option>${(inv.s||[]).map(([id,n])=>`<option value="${id}">${esc(n)}</option>`).join('')}</select>
-      <label class="f" for="pin">合言葉（数字4けた）</label><input type="tel" id="pin" inputmode="numeric" maxlength="4" autocomplete="off">
+    const me=store.get(meKey());
+    const openWith=async(id,name,rk)=>{const item=(inv.items||{})[id];S.id=id;S.name=name;
+      if(!item){S.reqStep='none';render();return true;}
+      try{S.req=await SNCodec.openReq(SNCodec.b64u.dec(rk),item);S.reqStep='ask';render();return true;}catch(e){return false;}};
+    if(me&&me.rk&&!S.reqManual){
+      const id=me.id||((rosterIdByName(me.name)||[])[0]);
+      if(id){app.innerHTML=head+'<div class="card">'+esc(me.name)+'さんへのお願いを確かめています…</div>';
+        openWith(id,me.name,me.rk).then(ok=>{if(!ok){S.reqManual=true;toast('暗証番号が変わっているようです。入れ直してください');render();}});return;}
+    }
+    app.innerHTML=head+`<div class="card"><label class="f" for="nm">あなたの名前</label><input type="text" id="nm" maxlength="10" autocomplete="off" placeholder="例：山田">
+      <label class="f" for="pin">暗証番号（数字4けた）</label><input type="tel" id="pin" inputmode="numeric" maxlength="4" autocomplete="off">
       <button class="btn primary block" id="open" style="margin-top:12px">開く</button></div>`;
-    $('#open').onclick=async()=>{const id=+$('#who').value,pin=$('#pin').value.trim();if(!id||!/^\d{4}$/.test(pin)){toast('名前と合言葉を入れてください');return;}
-      const name=inv.s.find(x=>x[0]===id)[1],item=(inv.items||{})[id];S.id=id;S.name=name;
-      if(!item){S.reqStep='none';render();return;}
-      try{const key=await SNCodec.reqKey(pin,name);S.req=await SNCodec.openReq(key,item);S.reqStep='ask';render();}
-      catch(e){toast('合言葉が違うようです');}};
+    $('#open').onclick=async()=>{const n=$('#nm').value.trim(),pin=$('#pin').value.trim();if(!n||!PINRE.test(pin)){toast('名前と暗証番号を入れてください');return;}
+      const hit=rosterIdByName(n);if(!hit){toast('名簿に見つかりません。名前を確かめてください');return;}
+      const rk=SNCodec.b64u.enc(await SNCodec.reqKey(pin,hit[1]));if(!await openWith(hit[0],hit[1],rk))toast('暗証番号が違うようです');};
     return;
   }
   if(S.reqStep==='none'){app.innerHTML=head+`<div class="card"><h2>今回はお願いはありません</h2><p class="note">${esc(S.name)}さん、ありがとうございました。</p></div>`;return;}
