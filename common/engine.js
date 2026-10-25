@@ -33,6 +33,7 @@ function buildModel(cfg){
     for(let n=0;n<S;n++){const f=cfg.fixed[n][d];if(f)o[f]++;}
     if(mode==='3'){o[DAY]=r.D;o[EVE]=r.E;o[NIG]=r.N;}
     else{o[DAY]=r.D;o[YAK]=r.Y;o[AKE]=d===0?prev.reduce((a,p)=>a+(p[1]===YAK?1:0),0):need[d-1][YAK];}
+    (cfg.minus||[]).forEach(([dd,c])=>{if(dd===d&&c>0&&c<6&&o[c]>0)o[c]--;}); /* 欠員で確定した日（その日だけ1人少なく） */
     let sum=0;for(let c=1;c<8;c++)sum+=o[c];
     o[OFF]=S-sum;
     if(o[OFF]<0&&!err){const br=(mode==='3'?[[DAY,'日勤'],[EVE,'準夜'],[NIG,'深夜']]:[[DAY,'日勤'],[YAK,'夜勤'],[AKE,'明け']]).filter(x=>o[x[0]]>0).map(x=>x[1]+o[x[0]]).join('・');
