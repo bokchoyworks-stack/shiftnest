@@ -25,12 +25,13 @@
     cache[y]=out;return out;
   }
   function holidayName(y,m,d){return holidaysOf(y)[(m+1)+'-'+d]||'';}
-  /* 月の日付一覧：m は 0 始まり */
-  function monthDays(y,m,yearEnd){
+  /* 月の日付一覧：m は 0 始まり。opt={sat,sun,pub}＝その日を「休日の人数」にするか（省略時はすべて休日） */
+  function monthDays(y,m,yearEnd,opt){
+    const o=Object.assign({sat:true,sun:true,pub:true},opt||{});
     const n=new Date(y,m+1,0).getDate(),out=[];
-    for(let i=1;i<=n;i++){const dow=new Date(y,m,i).getDay();let name=holidayName(y,m,i);
-      if(!name&&yearEnd&&((m===11&&i>=29)||(m===0&&i<=3)))name='年末年始';
-      out.push({day:i,dow,name,hol:dow===0||dow===6||!!name});}
+    for(let i=1;i<=n;i++){const dow=new Date(y,m,i).getDay();let name=holidayName(y,m,i);const pubHol=!!name;
+      const ye=yearEnd&&((m===11&&i>=29)||(m===0&&i<=3));if(!name&&ye)name='年末年始';
+      out.push({day:i,dow,name,hol:(dow===6&&o.sat)||(dow===0&&o.sun)||(pubHol&&o.pub)||ye});}
     return out;
   }
   g.SNHolidays={holidaysOf,holidayName,monthDays};

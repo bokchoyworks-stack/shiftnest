@@ -36,7 +36,7 @@ function buildModel(cfg){
     let sum=0;for(let c=1;c<8;c++)sum+=o[c];
     o[OFF]=S-sum;
     if(o[OFF]<0&&!err){const br=(mode==='3'?[[DAY,'日勤'],[EVE,'準夜'],[NIG,'深夜']]:[[DAY,'日勤'],[YAK,'夜勤'],[AKE,'明け']]).filter(x=>o[x[0]]>0).map(x=>x[1]+o[x[0]]).join('・');
-      err=days[d].day+'日は人が足りません。必要'+(sum-o[6]-o[7])+'人（'+br+'）に対し、出られる人は'+(S-o[6]-o[7])+'人です。1日の人数を減らすか、スタッフを増やしてください';}
+      err=days[d].day+'日は人が足りません。必要'+(sum-o[6]-o[7])+'人（'+br+'）に対し、出られる人は'+(S-o[6]-o[7])+'人です。人数そのものが足りないので、希望の調整（お願い）では解決できません。1日の人数を減らすか、スタッフを増やしてください';}
     need.push(o);
   }
   const gi=Int8Array.from(staff.map(s=>s.gi)),G=cfg.groups.length,nightOK=staff.map(s=>!!s.night),target=staff.map(s=>s.off);
