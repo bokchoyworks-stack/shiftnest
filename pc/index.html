@@ -648,9 +648,9 @@ function buildCfg(){
     const base=kd==='day'?NB:kd==='night'?(1<<DAY):kd==='eve'?((1<<DAY)|(1<<NIG)):kd==='nig'?((1<<DAY)|(1<<EVE)):0;
     days.forEach((dd,i)=>{const k=dkey(state.ym,dd.day);let b=base;if(st.events.some(e=>e.type==='nightoff'&&k>=e.from&&k<=(e.to||e.from)))b|=NB;a[i]=b;});return a;});
   staff.forEach((x,i)=>{const kd=kindOf(inM[i].st),st0=inM[i].st;x.nMin=st0.nMin||0;x.nMax=st0.nMax??null;x.dMax=st0.dMax??null;x.kind=kd;x.dv=(kd==='all'||kd==='day')?(inM[i].st.dv||0):0;x.night=!ban[i].every(b=>(b&NB)===NB);});
-  return {cfg:{ban,mode:state.mode,days,staff,prefs,ng,prev:prevFor(inM),req:state.req[state.mode],rules:state.rules,groups:state.groups,combo:state.combo,fixed:inM.map(x=>x.f)},ids};
+  return {cfg:{ban,mode:state.mode,days,staff,prefs,ng,prev:prevFor(inM),req:state.req[state.mode],rules:state.rules,groups:state.groups,combo:state.combo,fixed:inM.map(x=>x.f),minus:pcShortfalls().map(x=>[x.day-1,x.code])},ids};
 }
-function changed(){state.result=null;saveLocal();}
+function changed(){pcKeepDraft('設定を変える前');state.result=null;saveLocal();}
 function invalidate(){if(state.result)state.stale=true;}
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),2600);}
 function fmtDay(d){const x=getDays()[d];return (ymParts().m+1)+'月'+x.day+'日（'+WD[x.dow]+'）';}
@@ -1331,12 +1331,33 @@ function renderAbs(res){
     <div class="row" style="margin:0 0 6px"><h3 class="grow" style="margin:0">急な休み：${esc(st.name)} さん　${fmtDay(d)}　${lbl}</h3><button class="btn sm" id="absClose">閉じる</button></div>
     <p class="note" style="margin:0 0 10px">代わりに入れる人の候補です。ルール（並び・組み合わせ・×の日・勤務タイプ）を守れる人だけを、負担が少ない順に並べています。${m.mode==='2'&&s===YAK?'翌日の「明け」も一緒に引き継ぎます。':''}</p>
     ${cands.length?`<div class="abs-list">${cands.map((c,i)=>{const cs=staffById(ids[c.r]);return `<div class="abs-row"><span class="abs-n">${i+1}</span><span class="abs-nm">${gpill(cs.gi)}<b>${esc(cs.name)}</b></span><span class="abs-why">${c.why.map(([k,t])=>`<span class="why why-${k}">${t}</span>`).join('')}</span><button class="btn sm" data-absok="${c.r}">この人に頼む</button></div>`;}).join('')}</div>
-    <div class="row" style="gap:8px;margin-top:10px"><button class="btn sm primary" id="absAll">上位${Math.min(3,cands.length)}人にまとめてお願い</button><span class="note">最初にOKした人に決まり、ほかの人には「決まりました」と届きます。引き受けた人は翌月「★優先休み」を1日使えます。</span></div>`
-    :`<div class="callout warn"><b>!</b><span class="tx">ルールを守ったまま代われる人がいません。この日を有給に固定して、勤務表を作り直すこともできます。</span></div>
-    <button class="btn sm" id="absRebuild" style="margin-top:8px">この日を有給にして作り直す</button>`}
+`
+    :`<div class="callout warn"><b>!</b><span class="tx">ルールを守ったまま代われる人がいません。声をかけても見つからなければ、下の「欠員で確定」を使ってください。</span></div>`}
+    <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><b style="flex-basis:100%">1. 声をかける</b>
+      <button class="btn sm" id="absCopy">お願いの文をコピー（LINEなどに貼る）</button>
+      ${(()=>{const em=cands.map(c=>((state.extra||{}).contacts||{})[ids[c.r]]).filter(Boolean);return em.length?`<a class="btn sm" href="mailto:?bcc=${encodeURIComponent(em.join(','))}&subject=${encodeURIComponent(absCallText(res,n,d,true))}&body=${encodeURIComponent(absCallText(res,n,d))}">候補の人だけにメール（${em.length}人・BCC）</a>`:'';})()}
+      <span class="note" style="flex-basis:100%">入れる人が見つかったら、上の候補からその人を選んでください。ほかの人の勤務は変わりません。</span></div>
+    <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><b style="flex-basis:100%">2. 見つからないとき</b>
+      <button class="btn sm" id="absShort" style="color:var(--bad)">代わりを立てず、この日は1人少なくする（欠員で確定）</button>
+      <span class="note" style="flex-basis:100%">${esc(st.name)}さんは有給になり、この日の${lbl}は1人少ない人数で確定します。ほかの人の勤務は変わりません。印刷にも「欠員」と出ます。あとで「見比べる・前に戻す」で取り消せます。</span></div>
   </div>`;
 }
+function absCallText(res,n,d,subj){const s=res.X[n][d],dd=res.m.days[d],mm=+state.ym.split('-')[1],day=mm+'月'+dd.day+'日（'+'日月火水木金土'[dd.dow]+'）';
+  return subj?day+'の'+LONG[s]+'のお願い':'【お願い】'+day+'の'+LONG[s]+'に入れる人はいませんか？入れる人は、管理者に直接連絡してください。';}
+function applyShortfall(){
+  const res=state.result,{m,X,ids}=res,{n,d}=state.abs,s=X[n][d],D=m.D;if(!(s>0&&s<6))return;
+  const st=staffById(ids[n]),kept=pcKeepDraft('欠員にする前（'+st.name+'さん '+m.days[d].day+'日）');
+  X[n][d]=6;if(res.V)res.V[n][d]=0;m.fixed[n][d]=6;m.need[d][6]++;m.need[d][s]--;
+  if(m.mode==='2'&&s===YAK&&d+1<D){if(X[n][d+1]===AKE)X[n][d+1]=OFF;m.need[d+1][AKE]--;m.need[d+1][OFF]++;}
+  res.v=verify(m,X);
+  const date=dkey(state.ym,m.days[d].day);st.events.push({type:'yukyu',from:date,to:date});
+  const sf={day:m.days[d].day,code:s,name:st.name};pcShortfalls().push(sf);
+  if(kept){const L=pcDrafts();if(L.length){L[0].addedLeave=[st.id+'|'+date];L[0].addedShortfall=sf.day+'-'+sf.code+'-'+sf.name;}}
+  state.absMsg={ym:state.ym,txt:fmtDay(d)+'：'+st.name+'さんは有給、'+LONG[s]+'は1人少なくして確定しました（欠員）。'};
+  state.abs=null;saveLocal();renderTable();toast(m.days[d].day+'日は'+LONG[s]+'1人少なくして確定しました');
+}
 function applyAbs(r,viaGroup){
+  const kept=pcKeepDraft('代わりを決める前（'+((staffById(state.result.ids[state.abs.n])||{}).name||'')+'さん '+state.result.m.days[state.abs.d].day+'日）');
   absCandidates.last=absCandidates(state.result,state.abs.n,state.abs.d);
   const res=state.result,{m,X,ids}=res,{n,d}=state.abs,s=X[n][d],D=m.D,two=m.mode==='2'&&s===YAK;
   X[n][d]=6;m.fixed[n][d]=6;m.need[d][6]++;m.need[d][OFF]--;
@@ -1349,6 +1370,7 @@ function applyAbs(r,viaGroup){
   res.v=verify(m,X);
   const absent=staffById(ids[n]),sub=staffById(ids[r]);
   absent.events.push({type:'yukyu',from:dkey(state.ym,m.days[d].day),to:dkey(state.ym,m.days[d].day)});
+  if(kept){const L=pcDrafts();if(L.length)L[0].addedLeave=[absent.id+'|'+dkey(state.ym,m.days[d].day)];}
   if(viaGroup){const ny=nextYm(state.ym);state.credits[ny]=state.credits[ny]||{};state.credits[ny][sub.id]=1;}
   state.absMsg={ym:state.ym,txt:`${fmtDay(d)}：${absent.name}さんは有給、代わりに${sub.name}さんが${LONG[s]}に入りました。${viaGroup?'（3人にお願い → 最初にOKした人に決定。'+sub.name+'さんは翌月★優先休みあり）':''}`};
   state.abs=null;saveLocal();renderTable();
@@ -1495,8 +1517,61 @@ document.addEventListener('click',e=>{
 
 /* ---------- 3 table ---------- */
 const raf=()=>new Promise(r=>requestAnimationFrame(()=>r()));
+/* ===== 前の勤務表の控え・見比べ（iPhone版 ScheduleDraft / CompareView と同じ形） ===== */
+function stampNow(){const t=new Date(),z=n=>String(n).padStart(2,'0');return t.getFullYear()+'/'+z(t.getMonth()+1)+'/'+z(t.getDate())+' '+z(t.getHours())+':'+z(t.getMinutes());}
+function pcDrafts(){const x=state.extra||(state.extra={});x.drafts=x.drafts||{};return x.drafts[state.ym]=x.drafts[state.ym]||[];}
+function flatRows(A){const o=[];(A||[]).forEach(r=>{for(let i=0;i<r.length;i++)o.push(r[i]);});return o;}
+function pcKeepDraft(label){const r=state.result;if(!r||r.err||!r.X||r.ym!==state.ym)return;
+  const X=flatRows(r.X),V=r.V?flatRows(r.V):X.map(()=>0),L=pcDrafts();
+  if(L.length&&L[0].X.join()===X.join()&&L[0].ids.join()===r.ids.join())return false;
+  L.unshift({at:stampNow(),label,ids:r.ids.slice(),X,V});if(L.length>10)L.length=10;return true;}
+function pcShortfalls(ym){const x=state.extra||(state.extra={});x.shortfalls=x.shortfalls||{};const k=ym||state.ym;return x.shortfalls[k]=x.shortfalls[k]||[];}
+function shortfallNotes(ym){const mm=+String(ym||state.ym).split('-')[1];return pcShortfalls(ym).map(x=>mm+'/'+x.day+' '+LONG[x.code]+'1人（'+x.name+'さん休み）');}
+function pcChoices(){const out=[],r=state.result;
+  if(r&&!r.err&&r.X&&r.ym===state.ym)out.push({id:'now',title:'いまの勤務表',ids:r.ids,X:flatRows(r.X),V:r.V?flatRows(r.V):null});
+  pcDrafts().forEach((d,i)=>out.push({id:'d'+i,title:d.label+'（'+d.at.slice(5)+'）',ids:d.ids,X:d.X,V:d.V,draft:d}));return out;}
+function alignRows(c,ids,D){return ids.map(id=>{const k=c.ids.indexOf(id),row=new Int8Array(D);if(k>=0&&c.X.length>=(k+1)*D)for(let d=0;d<D;d++)row[d]=c.X[k*D+d];return row;});}
+function pcRestore(c){const d=c.draft;if(!d)return;
+  if(d.addedShortfall){const L=pcShortfalls(),k=L.findIndex(x=>x.day+'-'+x.code+'-'+x.name===d.addedShortfall);if(k>=0)L.splice(k,1);}
+  (d.addedLeave||[]).forEach(key=>{const [id,dt]=key.split('|');const st=staffById(+id);if(st){const k=st.events.map(e=>e.type==='yukyu'&&e.from===dt&&e.to===dt).lastIndexOf(true);if(k>=0)st.events.splice(k,1);}});
+  const {cfg,ids}=buildCfg(),m=buildModel(cfg);if(m.err){toast(m.err);return;}
+  const D=m.D;for(const id of ids){if(d.ids.indexOf(id)<0){toast('その後スタッフが増えたため戻せません（'+((staffById(id)||{}).name||'')+'さん）');return;}}
+  pcKeepDraft('戻す前');const L=pcDrafts(),k=L.indexOf(d);if(k>=0)L.splice(k,1);
+  const X=alignRows(d,ids,D),V=alignRows({ids:d.ids,X:d.V||[]},ids,D),v=verify(m,X),av=assignVariants(m,X);v.hard.push(...av.miss);
+  state.result={m,ids,V,lc:av.lc,ec:av.ec,X,v,ms:0,sugg:v.xv.length?analyzeX(m,v.xv):null,ym:state.ym};
+  state.abs=null;renderTable();toast(d.at+'（'+d.label+'）の勤務表に戻しました');}
+function openCompare(bId){
+  const ch=pcChoices();if(ch.length<2){toast('見比べる勤務表がありません。「作り直す」と前の勤務表が残ります');return;}
+  state.cmp=state.cmp||{};state.cmp.a=ch[0].id;state.cmp.b=(bId&&ch.find(c=>c.id===bId))?bId:ch[1].id;state.cmp.only=false;renderCompare();}
+function renderCompare(){
+  const ch=pcChoices(),A=ch.find(c=>c.id===state.cmp.a)||ch[0],B=ch.find(c=>c.id===state.cmp.b)||ch[1];
+  const {cfg,ids}=buildCfg(),m=buildModel(cfg);if(m.err){toast(m.err);return;}
+  const D=m.D,xa=alignRows(A,ids,D),xb=alignRows(B,ids,D),va=verify(m,xa),vb=verify(m,xb);
+  let diff=0;for(let n=0;n<ids.length;n++)for(let d=0;d<D;d++)if(xa[n][d]!==xb[n][d])diff++;
+  const met=(tag,c,v)=>{const ns=v.nights?Array.from(v.nights):[0],sp=Math.max(...ns)-Math.min(...ns),xr=v.pref.x[1]?Math.round(v.pref.x[0]/v.pref.x[1]*100):100;
+    const row=(k,t,ok)=>`<div class="row" style="justify-content:space-between;margin:2px 0"><span class="note">${k}</span><b style="color:var(${ok?'--ok':'--warn'})">${t}</b></div>`;
+    return `<div class="card" style="flex:1;min-width:220px;padding:12px"><b>${tag}：${esc(c.title)}</b>${row('絶対ルール',v.hard.length?v.hard.length+'件 違反':'すべて守った',!v.hard.length)}${row('×（希望休）',xr+'%',!v.xv.length)}${row('週休',v.short.length?v.short.length+'人 不足':'全員とれた',!v.short.length)}${row('夜勤回数の差',sp+'回',sp<=2)}</div>`;};
+  const sel=(k,cur)=>`<select data-cmpsel="${k}">${ch.map(c=>`<option value="${c.id}" ${c.id===cur?'selected':''}>${esc(c.title)}</option>`).join('')}</select>`;
+  const rows=ids.map((id,n)=>({id,n})).filter(({n})=>!state.cmp.only||xa[n].some((v,d)=>v!==xb[n][d]));
+  const cls=['o','d','e','n','y','a','yk','x'];
+  $('#modal-root').innerHTML=`<div class="modal" id="cmpModal"><div class="modal-in"><div class="modal-bar"><b>勤務表を見比べる</b><button class="btn sm" id="cmpClose" style="margin-left:auto">閉じる</button></div>
+    <div class="card"><div class="row" style="gap:10px;flex-wrap:wrap"><span class="chip">A</span>${sel('a',A.id)}<span>⇄</span><span class="chip" style="background:var(--accent);color:#fff">B</span>${sel('b',B.id)}
+      <label class="note" style="margin-left:auto"><input type="checkbox" id="cmpOnly" ${state.cmp.only?'checked':''}> 違う人だけ</label></div>
+    <div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">${met('A',A,va)}${met('B',B,vb)}</div>
+    <p style="margin:10px 0 4px"><b>${diff?'違うマス '+diff+'か所':'AとBは同じです'}</b>　<span class="note">マスはBの勤務。オレンジ枠はAと違うところで、小さい字がAの勤務です。</span></p>
+    <div style="overflow:auto;max-height:60vh"><table class="sched" style="font-size:12px"><thead><tr><th>名前</th>${m.days.map(dd=>`<th class="${colCls(dd)}">${dd.day}<br><span style="font-weight:400">${'日月火水木金土'[dd.dow]}</span></th>`).join('')}</tr></thead>
+    <tbody>${rows.map(({id,n})=>`<tr><td class="nm" style="white-space:nowrap">${esc((staffById(id)||{}).name||'')}</td>${m.days.map((dd,d)=>{const a=xa[n][d],b=xb[n][d],ch2=a!==b;return `<td class="c" style="${ch2?'outline:2px solid var(--warn);outline-offset:-2px;':''}text-align:center"><span class="sh s${b}">${LABEL[b]||''}</span>${ch2?`<div style="font-size:9px;color:var(--muted);text-decoration:line-through">${LABEL[a]||''}</div>`:''}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>
+    <div class="row" style="gap:10px;margin-top:12px;justify-content:flex-end">${B.id!=='now'?`<button class="btn primary" id="cmpUse">Bを「いまの勤務表」にする</button>`:''}</div></div></div></div>`;
+}
+document.addEventListener('change',e=>{const s=e.target.closest('[data-cmpsel]');if(s){state.cmp[s.dataset.cmpsel]=s.value;renderCompare();return;}if(e.target.id==='cmpOnly'){state.cmp.only=e.target.checked;renderCompare();}});
+document.addEventListener('click',e=>{
+  if(e.target.closest('#cmpClose')||e.target.id==='cmpModal'){$('#modal-root').innerHTML='';return;}
+  if(e.target.closest('#cmpUse')){const B=pcChoices().find(c=>c.id===state.cmp.b);if(!B)return;if(!confirm('「'+B.title+'」をいまの勤務表にしますか？\nいまの勤務表は控えに残るので、あとで戻せます。'))return;$('#modal-root').innerHTML='';pcRestore(B);return;}
+  if(e.target.closest('#cmpOpen')){openCompare();return;}
+});
 async function runSolve(){
   if(state.solving)return;
+  pcKeepDraft('作り直す前');
   state.solving=true;state.stale=false;state.progress=0;renderTable();
   const t0=performance.now();
   const {cfg,ids}=buildCfg(),m=buildModel(cfg);
@@ -1532,6 +1607,8 @@ function renderTable(){
   <div class="panel-head"><div><h2>${monthLabel(state.ym)}の勤務表</h2><p>締切後に「勤務表を作る」を押すだけ。iPhoneの中で計算するので、データはどこにも送られません。</p></div>${saved?'<span class="chip" style="color:var(--ok);margin-left:auto">✓ この月は保存済み</span>':''}</div>
   <div class="toolbar">
     <button class="btn primary big" id="solveBtn" ${state.solving?'disabled':''}>${state.solving?'計算中…':(res&&!res.err?'作り直す':'勤務表を作る')}</button>
+    ${shortfallNotes().length?`<span class="chip" style="color:var(--bad)">欠員：${esc(shortfallNotes().join('、'))}</span>`:''}
+    ${pcDrafts().length?`<button class="btn" id="cmpOpen">見比べる・前に戻す（${pcDrafts().length}）</button>`:''}
     <label class="opt">${sw('showPrefs',state.showPrefs,'希望マークを表示')}<span>希望マークを表示</span></label>
     <span class="chip">${state.mode==='3'?'3交代':'2交代'}・${rosterInfo().inM.length}名</span>
   </div>`;
@@ -1649,7 +1726,8 @@ $('#p-table').addEventListener('click',e=>{
   if(cell){const [n,d]=cell.dataset.cell.split('.').map(Number);state.abs={n,d};renderTable();const p=$('#absPanel');if(p)p.scrollIntoView({behavior:'smooth',block:'start'});return;}
   if(e.target.closest('#absClose')){state.abs=null;renderTable();return;}
   const ao=e.target.closest('[data-absok]');if(ao){applyAbs(+ao.dataset.absok,false);return;}
-  if(e.target.closest('#absAll')){const res=state.result,c=absCandidates(res,state.abs.n,state.abs.d);applyAbs(c[0].r,true);return;}
+  if(e.target.closest('#absCopy')){copyText(absCallText(state.result,state.abs.n,state.abs.d),'お願いの文をコピーしました。LINEなどに貼り付けてください','#absPanel');return;}
+  if(e.target.closest('#absShort')){if(!confirm('この日は1人少なくして確定しますか？\nほかの人の勤務は変わりません。あとで「見比べる・前に戻す」で取り消せます。'))return;applyShortfall();return;}
   if(e.target.closest('#absRebuild')){const res=state.result,{n,d}=state.abs,st=staffById(res.ids[n]),k=dkey(state.ym,res.m.days[d].day);st.events.push({type:'yukyu',from:k,to:k});state.abs=null;changed();runSolve();return;}
   const s=e.target.closest('[data-sw]');
   if(s){const k=s.dataset.sw;
@@ -1732,7 +1810,7 @@ function openPrint(sn){
     <div class="modal-bar"><b>印刷イメージ（A4横）</b><span style="opacity:.8;font-size:13px">アプリ版ではこのままPDFになります</span><button class="btn sm" id="closeM" style="margin-left:auto">閉じる</button></div>
     <div class="a4"><div class="ttl"><b>${esc(sn.title)} 勤務表　${esc(state.ward)}</b><span>${sn.mode==='3'?'3交代　日＝日勤 準＝準夜 深＝深夜':'2交代　日＝日勤 夜＝夜勤 明＝明け'} 休＝休み 有＝有給 早＝早出 遅＝遅出 短＝時短</span></div>
     <div class="tbl"><table>${h}</table></div>
-    <div class="foot"><span>月平均夜勤 ${sn.avgH}時間</span><span>作成：勤務表メーカー</span></div></div>
+    <div class="foot"><span>${shortfallNotes(sn.ym).length?'欠員：'+esc(shortfallNotes(sn.ym).join('、'))+'　':''}月平均夜勤 ${sn.avgH}時間</span><span>作成：ShiftNest</span></div></div>
   </div></div>`;
   $('#modal').addEventListener('click',e=>{if(e.target.id==='modal'||e.target.closest('#closeM'))$('#modal-root').innerHTML='';});
 }
