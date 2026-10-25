@@ -332,7 +332,9 @@ function renderSend(head,title,foot,onBack){
     <p class="note">管理者から「提出用のLINEグループ」に送るよう言われている場合は、そこに送ってください。管理者が全員分をまとめて取り込めます。中身は暗号化されていて、グループのほかの人には読めません。</p>
     <p class="note">${foot}</p>
     ${onBack?'<button class="btn block" id="again">直す</button>':''}</div>`;
-  const text='ShiftNestの回答です。管理者のアプリで受け取ってください。\n'+link+'\n\n（開けないときは次の文字をアプリに貼り付け）\n'+tok;
+  const web=new URL('../open/',location.href).href.split('#')[0]+'#a='+tok;
+  const mm0=+String(S.inv.ym||'').split('-')[1]||'';
+  const text=(S.name?S.name+'さんの':'')+mm0+'月の勤務希望です（ShiftNest）。\n\n▼ 管理者の方へ：iPhoneでこのリンクを押すと、アプリに取り込まれます\n'+web+'\n\n※ リンクの長い文字は暗号です。中身は管理者のアプリでしか読めません。';
   const mm=+String(S.inv.ym||'').split('-')[1]||'',subj=mm+'月の勤務希望（ShiftNest）'+(S.name||'');
   $('#share').onclick=async()=>{if(navigator.share){try{await navigator.share({title:subj,text});}catch(e){}}else{location.href='mailto:?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(text);}};
   const mt=$('#mailTo');if(mt)mt.onclick=()=>{const last=store.get('sn-mail-'+S.inv.ym);
