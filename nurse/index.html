@@ -320,7 +320,10 @@ function pvCard(){
 function renderSend(head,title,foot,onBack){
   const tok=S.token,link='shiftnest://a?d='+tok;
   $('#app').innerHTML=head+`<div class="card"><h2>${title}</h2>
-    <p class="note" style="margin:0 0 10px">次のどれかで管理者に渡してください。中身は暗号化されていて、管理者のアプリでしか開けません。</p>
+    ${S.inv.to?`<button class="btn primary block" id="mailTo" style="font-size:17px;padding:14px">✉️ 管理者にメールで送る</button><p class="note" style="margin:6px 0 4px;text-align:center">宛先：${esc(S.inv.to)}（メールが開いたら「送信」を押すだけ）</p>
+      ${S.lastMail?`<p class="note" style="text-align:center;color:var(--ok)">${esc(S.lastMail)} にメールを開きました</p>`:''}`:''}
+    ${S.inv.ln?`<div class="box info" style="margin-top:8px"><b>職場の提出用LINEグループ</b>に送ってもかまいません（下の「送る」→ LINE）。</div>`:''}
+    <p class="note" style="margin:10px 0">${S.inv.to?'ほかの渡し方：':'次のどれかで管理者に渡してください。'}中身は暗号化されていて、管理者のアプリでしか開けません。</p>
     <div class="box info"><b>A. 管理者に画面を見せる</b>（いちばん確実）<br>管理者がアプリでこのQRコードを読み取ります。</div>
     <div class="qr" style="margin:10px 0">${qrSvg(tok)}</div>
     <div class="box info"><b>B. メール・メッセージで送る</b></div>
@@ -330,7 +333,12 @@ function renderSend(head,title,foot,onBack){
     <p class="note">${foot}</p>
     ${onBack?'<button class="btn block" id="again">直す</button>':''}</div>`;
   const text='ShiftNestの回答です。管理者のアプリで受け取ってください。\n'+link+'\n\n（開けないときは次の文字をアプリに貼り付け）\n'+tok;
-  $('#share').onclick=async()=>{if(navigator.share){try{await navigator.share({text});}catch(e){}}else{location.href='mailto:?subject='+encodeURIComponent('勤務の希望（ShiftNest）')+'&body='+encodeURIComponent(text);}};
+  const mm=+String(S.inv.ym||'').split('-')[1]||'',subj=mm+'月の勤務希望（ShiftNest）'+(S.name||'');
+  $('#share').onclick=async()=>{if(navigator.share){try{await navigator.share({title:subj,text});}catch(e){}}else{location.href='mailto:?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(text);}};
+  const mt=$('#mailTo');if(mt)mt.onclick=()=>{const last=store.get('sn-mail-'+S.inv.ym);
+    if(!confirm('管理者（'+S.inv.to+'）にメールで送りますか？'+(last?'\n\n前回は '+last+' に送っています。最後に送ったものが使われます。':'')))return;
+    const now=stampNow();store.set('sn-mail-'+S.inv.ym,now);S.lastMail=now;
+    location.href='mailto:'+encodeURIComponent(S.inv.to).replace('%40','@')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(text);};
   $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(text);toast('コピーしました');}catch(e){const r=document.createRange();r.selectNodeContents($('#tok'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('選択しました。コピーしてください');}};
   if(onBack)$('#again').onclick=onBack;
 }
