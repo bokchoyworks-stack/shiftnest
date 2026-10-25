@@ -1386,8 +1386,8 @@ function renderPC(){
       <b style="font-size:18px;display:block;margin-bottom:10px">iPhoneのデータを開く</b>
       <div class="pc-ways">
         <div class="pc-way"><b>A. カメラがあるパソコン</b><span>iPhoneに出るQRコードを、このパソコンのカメラに向けるだけ。</span><button class="btn sm primary" id="pcCam">カメラで読み取る</button></div>
-        <div class="pc-way"><b>B. カメラがないパソコン</b><span>iPhoneから送ったファイル（メール・共有フォルダ）を選び、iPhoneに出ている6桁の番号を入れます。</span>
-          <div class="row" style="gap:6px;margin:4px 0 0"><button class="btn sm" id="pcFile">ファイルを選ぶ</button>${p.how==='file'?`<input type="text" id="pcCode" inputmode="numeric" maxlength="7" placeholder="6桁の番号" style="width:110px" aria-label="6桁の番号"><button class="btn sm primary" id="pcOpen">開く</button>`:''}</div>
+        <div class="pc-way"><b>B. カメラがないパソコン</b><span>iPhoneから送ったファイル（メール・共有フォルダ）を選び、iPhoneに出ている鍵番号（6けた）を入れます。</span>
+          <div class="row" style="gap:6px;margin:4px 0 0"><button class="btn sm" id="pcFile">ファイルを選ぶ</button>${p.how==='file'?`<input type="text" id="pcCode" inputmode="numeric" maxlength="7" placeholder="鍵番号（6けた）" style="width:110px" aria-label="鍵番号（6けた）"><button class="btn sm primary" id="pcOpen">開く</button>`:''}</div>
           ${p.how==='file'?'<span class="note">kinmu-2026-11.kinmu を選びました（サンプル）</span>':''}</div>
       </div>
       <p class="note" style="margin:10px 0 0">インターネットにはつながりません。インストールも不要です。</p>`;
@@ -1419,10 +1419,10 @@ function renderPC(){
     <div class="card"><h3>共有パソコンでも安心</h3><ul class="try">
       <li><span class="ic soft">1</span><span><b>パソコンには保存しない。</b>データは開いている間だけ。タブを閉じれば消えます。</span></li>
       <li><span class="ic soft">2</span><span><b>操作がないと自動で閉じる。</b>10分（設定で変更可）。閉じると同時に画面の中身も消します。</span></li>
-      <li><span class="ic soft">3</span><span><b>ファイルは鍵付き。</b>iPhoneに出る6桁の番号がないと開けません。番号は毎回変わります。</span></li>
+      <li><span class="ic soft">3</span><span><b>ファイルは鍵付き。</b>iPhoneに出る鍵番号（6けた）がないと開けません。番号は毎回変わります。</span></li>
     </ul></div>
     <div class="card"><h3>受け渡しの方法</h3><ul class="try">
-      <li><span class="ic soft">→</span><span><b>iPhone → パソコン</b>：カメラがあればQRコード。なければ鍵付きファイル＋6桁の番号。</span></li>
+      <li><span class="ic soft">→</span><span><b>iPhone → パソコン</b>：カメラがあればQRコード。なければ鍵付きファイル＋鍵番号（6けた）。</span></li>
       <li><span class="ic soft">←</span><span><b>パソコン → iPhone</b>：パソコンの画面にQRコードを出して、iPhoneで読むだけ。</span></li>
       <li><span class="ic soft">◯</span><span><b>使えるのは購入した人だけ。</b>受け渡すデータにAppleの購入証明が入っていて、パソコン版が確認します。</span></li>
     </ul></div>
@@ -1836,17 +1836,17 @@ function showGate(msg){
     <div class="brand" style="padding:0 0 8px"><div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div><h1>ShiftNest パソコン版</h1><p>iPhoneアプリのデータを開いて、大きな画面で編集します</p></div></div>
     ${bye?`<div class="callout ok"><b>✓</b><span class="tx">${bye==='auto'?'しばらく操作がなかったので自動で閉じました。':'閉じました。'}このパソコンには何も残っていません。</span></div>`:''}
     ${msg?`<div class="callout bad"><b>×</b><span class="tx">${esc(msg)}</span></div>`:''}
-    ${linkData?`<div class="card" style="border:2px solid var(--accent)"><h3>メールのリンクから開きました</h3><p class="note" style="margin:0 0 8px">iPhoneの画面に出ている6桁の番号を入れてください。</p>
-      <div class="row" style="gap:8px"><input type="text" id="lCode" inputmode="numeric" maxlength="7" placeholder="6桁の番号" style="width:160px;font-size:20px;letter-spacing:.1em" aria-label="6桁の番号" autofocus><button class="btn primary" id="lOpen">開く</button></div></div>`:''}
+    ${linkData?`<div class="card" style="border:2px solid var(--accent)"><h3>メールのリンクから開きました</h3><p class="note" style="margin:0 0 8px">iPhoneのShiftNestアプリに出ている鍵番号（6けた）を入れてください。<br>これは、あなたの勤務表データの鍵をあけるための番号です。ログインやアカウントの番号ではありません。このページ（パソコン版ShiftNest）以外には入れないでください。</p>
+      <div class="row" style="gap:8px"><input type="text" id="lCode" inputmode="numeric" maxlength="7" placeholder="鍵番号（6けた）" style="width:160px;font-size:20px;letter-spacing:.1em" aria-label="鍵番号（6けた）" autofocus><button class="btn primary" id="lOpen">開く</button></div></div>`:''}
     <div class="gate-ways">
       <div class="card" style="border:2px solid var(--accent)"><h3>A. メールのリンクで開く（おすすめ）</h3>
-        <ol class="pc-steps"><li>iPhoneの「設定」→「パソコンで使う」→「メールで送る」で、自分あてに送る</li><li>このパソコンでそのメールを開き、リンクを押す（このページが自動で開きます）</li><li>iPhoneに出ている6桁の番号を入れる</li></ol>
+        <ol class="pc-steps"><li>iPhoneの「設定」→「パソコンで使う」→「メールで送る」で、自分あてに送る</li><li>このパソコンでそのメールを開き、リンクを押す（このページが自動で開きます）</li><li>iPhoneに出ている鍵番号（6けた）を入れる</li></ol>
         <p class="note" style="margin:0">カメラもインストールもいりません。</p>
       </div>
       <div class="card"><h3>B. ファイルで開く</h3>
-        <ol class="pc-steps"><li>iPhoneの「パソコンで使う」→「ファイルで送る」</li><li>届いたファイル（.shiftnest）をここで選ぶ</li><li>iPhoneに出ている6桁の番号を入れる</li></ol>
+        <ol class="pc-steps"><li>iPhoneの「パソコンで使う」→「ファイルで送る」</li><li>届いたファイル（.shiftnest）をここで選ぶ</li><li>iPhoneに出ている鍵番号（6けた）を入れる</li></ol>
         <div class="row" style="gap:8px"><label class="btn" for="gFile">ファイルを選ぶ</label><input type="file" id="gFile" accept=".shiftnest,application/octet-stream" hidden><span class="note" id="gFileName">まだ選んでいません</span></div>
-        <div class="row" style="gap:8px;margin-top:10px"><input type="text" id="gCode" inputmode="numeric" maxlength="7" placeholder="6桁の番号" style="width:140px;font-size:18px;letter-spacing:.1em" aria-label="6桁の番号"><button class="btn primary" id="gOpen">開く</button></div>
+        <div class="row" style="gap:8px;margin-top:10px"><input type="text" id="gCode" inputmode="numeric" maxlength="7" placeholder="鍵番号（6けた）" style="width:140px;font-size:18px;letter-spacing:.1em" aria-label="鍵番号（6けた）"><button class="btn primary" id="gOpen">開く</button></div>
       </div>
     </div>
     <details class="card" style="margin-top:12px"><summary><b>C. カメラで読み取る（パソコンにカメラがあるとき）</b></summary>
@@ -1865,10 +1865,10 @@ document.addEventListener('change',e=>{if(e.target.id==='gFile'){const f=e.targe
 document.addEventListener('click',async e=>{
   const t=e.target;
   if(t.closest('#gOpen')){const f=$('#gFile').files[0],code=($('#gCode').value||'').replace(/\D/g,'');
-    if(!f){toast('ファイルを選んでください');return;}if(code.length!==6){toast('6桁の番号を入れてください');return;}
+    if(!f){toast('ファイルを選んでください');return;}if(code.length!==6){toast('鍵番号（6けた）を入れてください');return;}
     t.disabled=true;t.textContent='開いています…';
     try{importData(await SNCodec.fileOpen(code,await f.arrayBuffer()));enterApp();}catch(err){t.disabled=false;t.textContent='開く';toast(err.message);}return;}
-  if(t.closest('#lOpen')){const code=($('#lCode').value||'').replace(/\D/g,'');if(code.length!==6){toast('6桁の番号を入れてください');return;}
+  if(t.closest('#lOpen')){const code=($('#lCode').value||'').replace(/\D/g,'');if(code.length!==6){toast('鍵番号（6けた）を入れてください');return;}
     t.disabled=true;t.textContent='開いています…';try{importData(await SNCodec.fileOpen(code,linkData));linkData=null;enterApp();}catch(err){t.disabled=false;t.textContent='開く';toast(err.message);}return;}
   if(t.closest('#gCam')){startScan();return;}
   if(t.closest('#camStop')){if(scanStop)scanStop();return;}
@@ -1900,13 +1900,13 @@ function renderSync(){
     <div class="card"><h3>QRコードで戻す（おすすめ）</h3><p class="note">iPhoneの「パソコンで使う」→「パソコンから戻す」で、この画面に向けるだけ。何枚かに分かれるときは自動で切り替わります。</p>
       <button class="btn primary" id="syncQR">QRコードを出す</button>
       ${s&&s.kind==='qr'?`<div class="sync-qr"><div class="qrbox" id="syncQRbox"></div><b id="syncQRn"></b><span class="note">iPhoneが全部読み取るまで、そのまま見せてください。</span></div>`:''}</div>
-    <div class="card"><h3>メールで戻す</h3><p class="note">リンクを作って、自分のiPhoneにメールで送ります。iPhoneでリンクを押す → 「ShiftNestアプリで開く」→ 6桁の番号を入れる。</p>
+    <div class="card"><h3>メールで戻す</h3><p class="note">リンクを作って、自分のiPhoneにメールで送ります。iPhoneでリンクを押す → 「ShiftNestアプリで開く」→ 鍵番号（6けた）を入れる。</p>
       <button class="btn" id="syncMail">リンクを作る</button>
       ${s&&s.kind==='mail'?`<div class="callout info" style="margin-top:10px;flex-direction:column"><span class="tx">iPhoneで入れる番号：<b style="font-size:20px;letter-spacing:.1em">${s.code.slice(0,3)} ${s.code.slice(3)}</b>（メールには書かないでください）</span>
         <textarea id="mailLink" class="fallback" readonly style="height:70px">${esc(s.link)}</textarea>
         <div class="row" style="gap:8px"><button class="btn sm primary" id="mailCopy">リンクをコピー</button><a class="btn sm" href="mailto:?subject=${encodeURIComponent('ShiftNest（パソコンで直した勤務表）')}&body=${encodeURIComponent(s.link)}">メールを開く</a></div>
         <span class="note">「メールを開く」で本文が入らないときは、コピーして貼り付けてください。</span></div>`:''}</div>
-    <div class="card"><h3>ファイルで戻す</h3><p class="note">ファイルを作ってメールなどでiPhoneに送り、iPhoneでファイルを開いて6桁の番号を入れます。</p>
+    <div class="card"><h3>ファイルで戻す</h3><p class="note">ファイルを作ってメールなどでiPhoneに送り、iPhoneでファイルを開いて鍵番号（6けた）を入れます。</p>
       <button class="btn" id="syncFile">ファイルを作る</button>
       ${s&&s.kind==='file'?`<div class="callout info" style="margin-top:10px"><b>↓</b><span class="tx"><a href="${s.url}" download="${esc(s.name)}" style="color:var(--accent);font-weight:700">${esc(s.name)} をダウンロード</a><br>iPhoneで入れる番号：<b style="font-size:20px;letter-spacing:.1em">${s.code.slice(0,3)} ${s.code.slice(3)}</b></span></div>`:''}</div>
     <div class="card" style="grid-column:1/-1"><h3>終わったら</h3><p class="note">「閉じる」を押すと、このパソコンから全部消えます。閉じ忘れても${IDLE_MIN}分で自動的に閉じます。</p><button class="btn" id="logoutBtn">閉じる（ログアウト）</button></div>
