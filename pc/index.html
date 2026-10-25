@@ -563,7 +563,9 @@ function loadLocal(){}
 
 /* ---------- 月・スタッフ ---------- */
 function ymParts(ym){const [y,m]=(ym||state.ym).split('-').map(Number);return {y,m:m-1};}
-function getDays(ym){const {y,m}=ymParts(ym);return monthDays(y,m,state.yearEnd);}
+function holOpt(){const x=state.extra||{};return {sat:x.holSat!==false,sun:x.holSun!==false,pub:x.holPub!==false};}
+function holLabel(){const o=holOpt(),t=(o.sat?'土':'')+(o.sun?'日':'')+(o.pub?'祝':'');return t||'休日';}
+function getDays(ym){const {y,m}=ymParts(ym);return monthDays(y,m,state.yearEnd,holOpt());}
 function baseOff(){return getDays().filter(d=>d.hol).length;}
 function dkey(ym,day){return ym+'-'+String(day).padStart(2,'0');}
 function prevYm(ym){const {y,m}=ymParts(ym);const d=new Date(y,m-1,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
@@ -947,8 +949,10 @@ function renderSetup(){
       <span class="toggle-lbl ${state.mode==='3'?'on':''}">3交代</span>${sw('mode2',state.mode==='2','2交代に切り替え')}<span class="toggle-lbl ${state.mode==='2'?'on':''}">2交代</span></div>
     <div class="row"><span class="grow"><b>作る月</b></span><select id="ymSel">${monthsList().map(([v,t])=>`<option value="${v}" ${v===state.ym?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="row"><span class="grow"><b>前月からの引き継ぎ</b><br><span class="note">${state.history[pv]?monthLabel(pv)+'の保存済み勤務表から自動で読み込みます':monthLabel(pv)+'は未保存のため、サンプルの前月データを使います'}</span></span><span class="chip" style="color:${state.history[pv]?'var(--ok)':'var(--muted)'}">${state.history[pv]?'✓ 引き継ぎOK':'サンプル'}</span></div>
+    <div class="row" style="align-items:flex-start"><span class="grow"><b>休みの日（休日の人数にする日）</b>${(state.extra||{}).holDecided?'':' <span class="chip" style="color:var(--warn)">まだ決めていません</span>'}<br><span class="note">例：病棟なら土日祝。土曜も外来・営業があるなら日祝。曜日に関係なく同じ人数なら全部オフ。</span></span>
+      <span class="row" style="gap:6px;margin:0">${[['holSat','土曜'],['holSun','日曜'],['holPub','祝日']].map(([k,t])=>`<span class="toggle-lbl ${holOpt()[k==='holSat'?'sat':k==='holSun'?'sun':'pub']?'on':''}">${t}</span>${sw(k,holOpt()[k==='holSat'?'sat':k==='holSun'?'sun':'pub'],t+'を休日の人数にする')}`).join('')}</span></div>
     <div class="row"><span class="grow">年末年始（12/29〜1/3）を休日の人数にする</span>${sw('yearEnd',state.yearEnd,'年末年始を休日扱い')}</div>
-    <div class="row" style="gap:8px">${hols.length?hols.map(h=>`<span class="chip" style="color:var(--sun)">${ymParts().m+1}/${h.day} ${esc(h.name)}</span>`).join(''):''}<span class="note">祝日は自動で入ります。土日祝 ${bo} 日 ＝ 週休の基本日数</span></div>
+    <div class="row" style="gap:8px">${hols.length?hols.map(h=>`<span class="chip" style="color:var(--sun)">${ymParts().m+1}/${h.day} ${esc(h.name)}</span>`).join(''):''}<span class="note">祝日は自動で入ります。休日（${holLabel()}） ${bo} 日 ＝ 週休の基本日数</span></div>
   </div>
 
   <div class="card">
@@ -956,12 +960,12 @@ function renderSetup(){
     <table class="need"><thead><tr><th></th>${cols.map(c=>`<th><span class="sh s${c[2]}">${c[1]}</span></th>`).join('')}</tr></thead>
     <tbody>
       <tr><td>平日</td>${cols.map(c=>`<td>${stepper('weekday.'+c[0],r.weekday[c[0]])}</td>`).join('')}</tr>
-      <tr><td>土日祝</td>${cols.map(c=>`<td>${stepper('holiday.'+c[0],r.holiday[c[0]])}</td>`).join('')}</tr>
+      <tr><td>${holLabel()}</td>${cols.map(c=>`<td>${stepper('holiday.'+c[0],r.holiday[c[0]])}</td>`).join('')}</tr>
     </tbody></table>
     <div class="sub-need"><div class="lbl" style="margin:10px 0 2px">日勤のうち、時間がずれる人</div>
       <table class="need"><thead><tr><th></th><th><span class="sh s1 w1">早出</span></th><th><span class="sh s1 w2">遅出</span></th></tr></thead><tbody>
       <tr><td>平日</td><td>${stepper('weekday.F',r.weekday.F||0)}</td><td>${stepper('weekday.L',r.weekday.L||0)}</td></tr>
-      <tr><td>土日祝</td><td>${stepper('holiday.F',r.holiday.F||0)}</td><td>${stepper('holiday.L',r.holiday.L||0)}</td></tr></tbody></table>
+      <tr><td>${holLabel()}</td><td>${stepper('holiday.F',r.holiday.F||0)}</td><td>${stepper('holiday.L',r.holiday.L||0)}</td></tr></tbody></table>
       <p class="note" style="margin:4px 0 0">時刻は施設ごと（例：早出 7:00〜15:45、遅出 11:15〜20:00）。使わないなら 0。日勤の人数の中から割り当てます。</p></div>
     <div style="margin-top:12px">${m.err?`<div class="callout bad"><b>×</b><span class="tx">${esc(m.err)}</span></div>`:
       `<div class="callout ${slack>=0?'ok':'bad'}"><b>${slack>=0?'✓':'!'}</b><span class="tx">必要な勤務 <b>${m.demand}</b> 回 ／ 出せる勤務 <b>${m.supply}</b> 回。${slack>=0?'余裕 '+slack+' 回。週休は全員とれる見込みです。':'<b>'+(-slack)+'回足りません。</b>人数を減らすか、スタッフを増やしてください。'}</span></div>`}</div>
@@ -1085,6 +1089,7 @@ $('#p-setup').addEventListener('click',e=>{
   if(s){const k=s.dataset.sw;
     if(k==='mode2'){state.mode=state.mode==='3'?'2':'3';state.accepted=[];}
     else if(k==='yearEnd')state.yearEnd=!state.yearEnd;
+    else if(k==='holSat'||k==='holSun'||k==='holPub'){const x=state.extra||(state.extra={});x[k]=x[k]===false;x.holDecided=true;}
     else if(k.startsWith('night.')){const s2=staffById(+k.split('.')[1]);s2.night=!s2.night;}
     changed();renderSetup();return;}
   const dvb=t.closest('[data-dv]');
