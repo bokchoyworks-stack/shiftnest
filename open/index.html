@@ -16,7 +16,14 @@ a.btn{display:block;text-align:center;background:var(--accent);color:#fff;border
   <p class="note">開いたら、パソコンの画面に出ていた6桁の番号を入れます。中身は鍵付きで、番号がないと開けません。<br>このページはデータを保存しません。</p>
 </div>
 <script>
-const h=new URLSearchParams(location.hash.slice(1)).get('d');
-if(!h){document.getElementById('msg').textContent='リンクが途中で切れているようです。もう一度送ってもらってください。';document.getElementById('go').style.display='none';}
-else{const url='shiftnest://import?d='+h;document.getElementById('go').href=url;}
+const P=new URLSearchParams(location.hash.slice(1)),h=P.get('d'),a=P.get('a');
+const $=id=>document.getElementById(id);
+if(a){ /* スタッフの希望（回答）：管理者のiPhoneのアプリで受け取る */
+  document.title='ShiftNest で受け取る';
+  $('msg').innerHTML='スタッフから届いた<b>勤務の希望</b>です。管理者のiPhoneのShiftNestで受け取ってください。';
+  const url='shiftnest://a?d='+encodeURIComponent(a);$('go').href=url;$('go').textContent='ShiftNest アプリで受け取る';
+  document.querySelector('.note').textContent='アプリが開かないときは、このページの文字をコピーして、アプリの「届いた申請・希望を取り込む」に貼り付けてください。中身は暗号で、管理者のアプリでしか開けません。このページはデータを保存しません。';
+  setTimeout(()=>{location.href=url;},300);
+}else if(!h){$('msg').textContent='リンクが途中で切れているようです。もう一度送ってもらってください。';$('go').style.display='none';}
+else{const url='shiftnest://import?d='+h;$('go').href=url;}
 </script></body></html>
