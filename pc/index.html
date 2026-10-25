@@ -1,3 +1,7 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ShiftNest パソコン版</title>
 <meta name="robots" content="noindex">
 <link rel="manifest" href="../manifest.webmanifest">
@@ -271,6 +275,14 @@ table.sched tr:hover td.nmc{background:var(--accent-soft)}
 .tw .dots{display:flex;gap:6px;justify-content:center;margin:16px 0 10px}.tw .dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}.tw .dots i.on{background:var(--ink)}
 .tw .nav{display:flex;gap:10px}.tw .nav .btn{flex:1;justify-content:center}
 .tw .cnt{display:flex;align-items:center;justify-content:center;gap:24px;margin:24px 0}.tw .cnt b{font-size:48px;min-width:60px;text-align:center}.tw .cnt button{width:56px;height:56px;font-size:24px}
+.setup-col>.card.stephide{display:none}
+.stepnav{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;position:sticky;top:0;z-index:5}
+.stepnav button.sp{border:1px solid var(--line);background:var(--surface-2);border-radius:99px;padding:6px 12px;font-weight:700;font-size:13px;color:var(--muted)}
+.stepnav button.sp.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.stepnav button.sp.done{color:var(--accent)}
+.stepnav .grow{flex:1}
+.stepbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:4px}
+.stepbar .btn.big{font-size:17px;padding:14px 22px}
 .team-banner{border:1.5px solid var(--star);background:var(--star-soft);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .modal-bar{display:flex;align-items:center;gap:10px;color:#fff;margin-bottom:10px;flex-wrap:wrap}
 .modal-bar .btn{background:#fff;color:#14262A;border-color:#fff}
@@ -926,7 +938,7 @@ function renderSetup(){
   const hist=Object.keys(state.history).sort();
   const pv=prevYm(state.ym);
   $('#p-setup').innerHTML=`
-  <div class="panel-head"><div><h2>師長の設定</h2><p>上から順に。2か月目からは「③スタッフ」の変更（退職・有給など）と締切だけで済みます。</p></div></div>
+  <div class="panel-head"><div><h2>管理者の設定</h2><p>1つずつ「次へ」で進み、最後に「勤務表を作る」を押します。2か月目からは「3. スタッフ」の変更（退職・有給など）だけで済みます。急ぐときは右上の「勤務表を作る →」でいつでも作れます。</p></div></div>
   <div class="setup-col">
   ${(state.extra||{}).teamsDone?'':`<div class="team-banner"><div style="flex:1;min-width:240px"><b>はじめに：チーム区分を作りましょう</b><div class="note">例：A 助産師・B 看護師、その中にベテラン・中堅・新人。絵で説明しながら1つずつ決めます（3分）。</div></div><button class="btn primary" data-teamwiz="1">チーム区分を作る</button></div>`}
   <div class="card">
@@ -1011,7 +1023,7 @@ function renderSetup(){
   </div>
 
   <div class="card">
-    ${secHead(5,'看護師の希望・招待QR','iPhoneアプリで')}
+    ${secHead(5,'スタッフの希望・招待QR','iPhoneアプリで')}
     <p class="note" style="margin:0">招待QRの表示と、看護師の回答の受け取りはiPhoneアプリで行います（回答の鍵はiPhoneにしかないため）。パソコンで直した内容は「iPhoneに戻す」で戻してください。</p>
   </div>
 
@@ -1023,7 +1035,33 @@ function renderSetup(){
     <p class="note" style="margin:8px 0 0">パソコンには保存しません。直した内容は必ず「iPhoneに戻す」で戻してください。</p>
   </div>
   </div>`;
+  applySetupSteps();
 }
+/* 設定を1枚ずつ表示して「次へ」で進む。最後は「勤務表を作る」で勤務表のページへ */
+function applySetupSteps(){
+  const col=$('#p-setup .setup-col');if(!col)return;
+  const cards=[...col.querySelectorAll(':scope > .card')];if(!cards.length)return;
+  const n=cards.length,all=!!state.setupAll;
+  if(state.setupStep==null||state.setupStep>=n)state.setupStep=0;
+  const cur=state.setupStep,title=c=>{const h=c.querySelector('h3');return h?h.textContent.trim():'';};
+  cards.forEach((c,i)=>c.classList.toggle('stephide',!all&&i!==cur));
+  const nav=document.createElement('div');nav.className='stepnav';
+  nav.innerHTML=(all?'<b style="font-size:14px">全部を表示中</b>':cards.map((c,i)=>`<button class="sp ${i===cur?'on':i<cur?'done':''}" data-sstep="${i}">${i<cur?'✓ ':''}${i+1}. ${esc(title(c))}</button>`).join(''))
+    +`<span class="grow"></span><button class="btn sm" data-sall="1">${all?'1枚ずつ表示':'全部を1画面で見る'}</button><button class="btn sm primary" data-ssolve="1">勤務表を作る →</button>`;
+  col.insertBefore(nav,col.firstChild);
+  const bar=document.createElement('div');bar.className='stepbar';
+  if(all){bar.innerHTML=`<span></span><button class="btn primary big" data-ssolve="1">設定はこれでOK → 勤務表を作る</button>`;}
+  else{const last=cur===n-1;
+    bar.innerHTML=`${cur>0?`<button class="btn" data-sstep="${cur-1}">← 戻る</button>`:'<span></span>'}`
+      +(last?`<button class="btn primary big" data-ssolve="1">設定はこれでOK → 勤務表を作る</button>`
+            :`<span class="note">${cur+1} / ${n}</span><button class="btn primary big" data-sstep="${cur+1}">次へ：${esc(title(cards[cur+1]))} →</button>`);}
+  col.appendChild(bar);
+}
+$('#p-setup').addEventListener('click',e=>{
+  const st=e.target.closest('[data-sstep]');if(st){state.setupStep=+st.dataset.sstep;renderSetup();window.scrollTo({top:0,behavior:'smooth'});return;}
+  if(e.target.closest('[data-sall]')){state.setupAll=!state.setupAll;renderSetup();return;}
+  if(e.target.closest('[data-ssolve]')){state.result=null;setTab('table');window.scrollTo({top:0});toast('勤務表を作っています…');return;}
+});
 function backupJSON(){const d=persistable();d.app='kinmu';d.exportedAt=new Date().toISOString().slice(0,10);return JSON.stringify(d);}
 function copyText(t,okMsg,box){
   const fb=()=>{const b=$(box);if(!b)return;b.innerHTML='<p class="note">自動でコピーできませんでした。下を全部選んでコピーしてください。</p><textarea class="fallback" readonly></textarea>';const ta=b.querySelector('textarea');ta.value=t;ta.focus();ta.select();};
@@ -1836,8 +1874,8 @@ function showGate(msg){
     <div class="brand" style="padding:0 0 8px"><div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div><h1>ShiftNest パソコン版</h1><p>iPhoneアプリのデータを開いて、大きな画面で編集します</p></div></div>
     ${bye?`<div class="callout ok"><b>✓</b><span class="tx">${bye==='auto'?'しばらく操作がなかったので自動で閉じました。':'閉じました。'}このパソコンには何も残っていません。</span></div>`:''}
     ${msg?`<div class="callout bad"><b>×</b><span class="tx">${esc(msg)}</span></div>`:''}
-    ${linkData?`<div class="card" style="border:2px solid var(--accent)"><h3>メールのリンクから開きました</h3><p class="note" style="margin:0 0 8px">iPhoneのShiftNestアプリに出ている鍵番号（6けた）を入れてください。<br>これは、あなたの勤務表データの鍵をあけるための番号です。ログインやアカウントの番号ではありません。このページ（パソコン版ShiftNest）以外には入れないでください。</p><p style="margin:0 0 8px;font-weight:700">リンクの印：<span style="font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em">${esc(linkMark)}</span>　<span class="note" style="font-weight:400">（iPhoneの画面の「リンクの印」と同じなら正しいリンクです）</span></p>
-      <div class="row" style="gap:8px"><input type="text" id="lCode" inputmode="numeric" maxlength="7" placeholder="鍵番号（6けた）" style="width:160px;font-size:20px;letter-spacing:.1em" aria-label="鍵番号（6けた）" autofocus><button class="btn primary" id="lOpen">開く</button></div></div>`:''}
+    ${linkData?`<div class="card" style="border:2px solid var(--accent)"><h3>メールのリンクから開きました</h3><p class="note" style="margin:0 0 8px">iPhoneのShiftNestアプリに出ている鍵番号（6けた）を入れてください。<br>これは、あなたの勤務表データの鍵をあけるための番号です。ログインやアカウントの番号ではありません。このページ（パソコン版ShiftNest）以外には入れないでください。</p>
+      <div style="display:flex;align-items:center;gap:14px;background:var(--accent-soft);border-radius:12px;padding:10px 14px;margin:0 0 10px"><span>リンクの印</span><b style="font-size:28px;letter-spacing:.15em;font-family:ui-monospace,Menlo,monospace">${esc(linkMark)}</b><span class="note">iPhoneの鍵番号の下に出ている4文字と同じならOK</span></div><div class="row" style="gap:8px"><input type="text" id="lCode" inputmode="numeric" maxlength="7" placeholder="鍵番号（6けた）" style="width:160px;font-size:20px;letter-spacing:.1em" aria-label="鍵番号（6けた）" autofocus><button class="btn primary" id="lOpen">開く</button></div></div>`:''}
     <div class="gate-ways">
       <div class="card" style="border:2px solid var(--accent)"><h3>A. メールのリンクで開く（おすすめ）</h3>
         <ol class="pc-steps"><li>iPhoneの「設定」→「パソコンで使う」→「メールで送る」で、自分あてに送る</li><li>このパソコンでそのメールを開き、リンクを押す（このページが自動で開きます）</li><li>iPhoneに出ている鍵番号（6けた）を入れる</li></ol>
