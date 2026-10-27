@@ -891,17 +891,33 @@ function twBuilt(){const d=state.tw,out=[];for(let t=0;t<d.n;t++){const L=twL(t)
 function twPage(){const d=state.tw;const ex=(h,b)=>`<div class="ex"><b>${h}</b>　${b}</div>`;
   const col=(L,nm,cls)=>`<div class="col"><div class="tb ${cls}"><b>チーム${L}</b><small>例：${nm}</small></div>${[['ベテラン','10年以上'],['中堅','3〜9年'],['新人','1〜2年目']].map(([a,b],k)=>`<div class="sg"><b>${L}${k+1} ${a}</b><small>${b}</small></div>`).join('')}</div>`;
   switch(d.step){
-  case 0:return `<p class="cap">1 / 7　はじめに</p><h3>まず「チーム」を作ります</h3><p>チーム＝仕事の種類や資格で分けた、大きなまとまりです。「この勤務には◯◯が何人」というルールに使います。</p>${ex('病院なら','A 助産師／B 看護師／C 看護補助者')}${ex('介護施設なら','A 介護職／B 看護職')}${ex('お店なら','A 社員／B アルバイト')}<p class="note">全員が同じ仕事なら、1チームだけでOKです。</p>`;
-  case 1:return `<p class="cap">2 / 7　チームの中を分ける</p><h3>チームの中に「グループ」を作れます</h3><p>経験年数などで分けます。分けなくてもかまいません。</p><div class="cols">${col('A','助産師','ta')}${col('B','看護師','tbb')}</div><p class="note">A1・B3 などの番号は自動でつきます。「B3」なら「看護師チームの新人」という意味です。</p>`;
-  case 2:return `<p class="cap">3 / 7　何に使うの？</p><h3>勤務ごとに人数のルールが作れます</h3>${ex('日勤','チームA（助産師）から2人以上')}${ex('夜勤','B3（看護師の新人）だけにしない')}${ex('夜勤','A1かB1（ベテラン）を1人以上')}${ex('なるべく','A3（助産師の新人）はA1と同じ日に')}<p class="note">ルールはあとで「区分とルール」で決めます。いまはチームとグループだけ作ります。</p>`;
-  case 3:return `<p class="cap">4 / 7　決めましょう</p><h3>チームはいくつ作りますか？</h3><div class="cnt"><button class="btn" data-tw="minus" aria-label="減らす">−</button><b>${d.n}</b><button class="btn" data-tw="plus" aria-label="増やす">＋</button></div><p class="note" style="text-align:center">迷ったら「2」。あとで増やせます。</p>`;
-  case 4:return `<p class="cap">5 / 7　名前をつける</p><h3>チームの名前を入れてください</h3>${Array.from({length:d.n},(_,i)=>`<label class="note" style="display:block;margin-top:10px">チーム${twL(i)}</label><input type="text" maxlength="16" data-twn="${i}" value="${esc(d.names[i]||'')}" placeholder="例：${TW_TEAM_EX[i*2%8]}、${TW_TEAM_EX[(i*2+1)%8]}、営業">`).join('')}<p class="note">薄い字は例です。空欄のままなら「チームA」のようになります。</p>`;
+  case 0:return `<p class="cap">1 / 8　はじめに</p><h3>まず「チーム」を作ります</h3><p>チーム＝仕事の種類や資格で分けた、大きなまとまりです。「この勤務には◯◯が何人」というルールに使います。</p>${ex('病院なら','A 助産師／B 看護師／C 看護補助者')}${ex('介護施設なら','A 介護職／B 看護職')}${ex('お店なら','A 社員／B アルバイト')}<p class="note">全員が同じ仕事なら、1チームだけでOKです。</p>`;
+  case 1:return `<p class="cap">2 / 8　チームの中を分ける</p><h3>チームの中に「グループ」を作れます</h3><p>経験年数などで分けます。分けなくてもかまいません。</p><div class="cols">${col('A','助産師','ta')}${col('B','看護師','tbb')}</div><p class="note">A1・B3 などの番号は自動でつきます。「B3」なら「看護師チームの新人」という意味です。</p>`;
+  case 2:return `<p class="cap">3 / 8　何に使うの？</p><h3>夜勤の組み合わせのルールが作れます</h3>${ex('夜勤','チームA（助産師）から1人以上')}${ex('夜勤','B3（看護師の新人）だけにしない')}${ex('夜勤','A1かB1（ベテラン）を1人以上')}${ex('なるべく','A3（助産師の新人）はA1と同じ夜勤に')}<p class="note">チームとグループを作ったあと、よく使うルールをまとめて選べます。細かい変更はあとで「区分とルール」からできます。</p>`;
+  case 3:return `<p class="cap">4 / 8　決めましょう</p><h3>チームはいくつ作りますか？</h3><div class="cnt"><button class="btn" data-tw="minus" aria-label="減らす">−</button><b>${d.n}</b><button class="btn" data-tw="plus" aria-label="増やす">＋</button></div><p class="note" style="text-align:center">迷ったら「2」。あとで増やせます。</p>`;
+  case 4:return `<p class="cap">5 / 8　名前をつける</p><h3>チームの名前を入れてください</h3>${Array.from({length:d.n},(_,i)=>`<label class="note" style="display:block;margin-top:10px">チーム${twL(i)}</label><input type="text" maxlength="16" data-twn="${i}" value="${esc(d.names[i]||'')}" placeholder="例：${TW_TEAM_EX[i*2%8]}、${TW_TEAM_EX[(i*2+1)%8]}、営業">`).join('')}<p class="note">薄い字は例です。空欄のままなら「チームA」のようになります。</p>`;
   case 5:{const t=Math.min(d.t,d.n-1),L=twL(t),ss=d.subs[t]&&d.subs[t].length?d.subs[t]:['','',''];d.subs[t]=ss;
-    return `<p class="cap">6 / 7　グループを作る（チーム ${t+1} / ${d.n}）</p><h3>${L}「${esc(twName(t))}」の中のグループ</h3>${ss.map((v,k)=>`<label class="note" style="display:block;margin-top:10px"><b>${L}${k+1}</b></label><input type="text" maxlength="20" data-tws="${t}.${k}" value="${esc(v)}" placeholder="例：${TW_GRP_EX[k%5]}">`).join('')}${ss.length<6?'<button class="btn block" data-tw="addsub" style="margin-top:10px">＋ グループを足す</button>':''}<p class="note">分けない場合は、空欄のまま「次へ」。チーム全体が「${L}」の1つになります。</p>`;}
+    return `<p class="cap">6 / 8　グループを作る（チーム ${t+1} / ${d.n}）</p><h3>${L}「${esc(twName(t))}」の中のグループ</h3>${ss.map((v,k)=>`<label class="note" style="display:block;margin-top:10px"><b>${L}${k+1}</b></label><input type="text" maxlength="20" data-tws="${t}.${k}" value="${esc(v)}" placeholder="例：${TW_GRP_EX[k%5]}">`).join('')}${ss.length<6?'<button class="btn block" data-tw="addsub" style="margin-top:10px">＋ グループを足す</button>':''}<p class="note">分けない場合は、空欄のまま「次へ」。チーム全体が「${L}」の1つになります。</p>`;}
+  case 6:{twEnsureRules();const nb=twNewbies();
+    const tg=(key,on,title,sub)=>`<label class="ex" style="display:flex;gap:12px;align-items:center;cursor:pointer"><input type="checkbox" data-twr="${key}" ${on?'checked':''} style="width:20px;height:20px"><span><b>${title}</b><br><span class="note">${sub}</span></span></label>`;
+    return `<p class="cap">7 / 8　グループどうしの決まり</p><h3>夜勤の組み合わせを決めましょう</h3><p class="note">夜勤ごとに、アプリがこの決まりを守って組みます。あとで「区分とルール」から細かく変えられます。</p>
+      ${Array.from({length:d.n},(_,t)=>tg('min.'+t,d.teamMin[t],'夜勤には、チーム'+twL(t)+'（'+esc(twName(t))+'）から1人以上','例：夜勤に'+esc(twName(t))+'が必ず1人いるように')).join('')}
+      ${nb.length?tg('nb',d.noNewbieOnly,'新人（'+nb.join('・')+'）だけの夜勤にしない','新人どうしだけで夜勤に入ることがないように')+tg('wv',d.newbieWithVet,'なるべく：新人はベテラン（'+nb.map(c=>c[0]+'1').join('・')+'）と同じ夜勤に','「なるべく」なので、組めないときは外れることがあります'):''}
+      <p class="note">${(state.extra||{}).teamsDone?'いまあるルールはそのまま残り、ここで選んだものが足されます。':'迷ったら、このままで大丈夫です。'}</p>`;}
   default:{const g=twBuilt(),codes=new Set(g.map(x=>x.code)),moved=state.staff.filter(st=>!codes.has(gcode(st.gi))).length;
-    return `<p class="cap">7 / 7　確認</p><h3>この区分で作ります</h3>${g.map(x=>`<div class="ex"><b style="display:inline-block;width:48px">${esc(x.code)}</b>${esc(x.desc)}</div>`).join('')}${moved?`<div class="callout bad" style="margin-top:8px"><b>!</b><span class="tx">今の区分がなくなるスタッフが${moved}人います。同じチームの最初のグループに移します。あとで「スタッフ」で直してください。</span></div>`:''}<p class="note">次は「スタッフ」で一人ひとりの区分を選びます。人数のルールは「区分とルール」から。</p>`;}
+    return `<p class="cap">8 / 8　確認</p><h3>この区分で作ります</h3>${g.map(x=>`<div class="ex"><b style="display:inline-block;width:48px">${esc(x.code)}</b>${esc(x.desc)}</div>`).join('')}${moved?`<div class="callout bad" style="margin-top:8px"><b>!</b><span class="tx">今の区分がなくなるスタッフが${moved}人います。同じチームの最初のグループに移します。あとで「スタッフ」で直してください。</span></div>`:''}<p class="note">次は「スタッフ」で一人ひとりの区分を選びます。人数のルールは「区分とルール」から。</p>`;}
   }}
-function twRender(){const d=state.tw;const last=6;
+function twEnsureRules(){const d=state.tw;d.teamMin=d.teamMin||[];while(d.teamMin.length<d.n)d.teamMin.push(d.teamMin.length===0);d.teamMin.length=d.n;if(d.noNewbieOnly===undefined)d.noNewbieOnly=true;if(d.newbieWithVet===undefined)d.newbieWithVet=false;}
+function twSubs(t){return (state.tw.subs[t]||[]).map(x=>x.trim()).filter(Boolean);}
+function twNewbies(){const d=state.tw,o=[];for(let t=0;t<d.n;t++){const c=twSubs(t).length;if(c>=2)o.push(twL(t)+c);}return o;}
+function twRules(g){const d=state.tw,idx=c=>g.findIndex(x=>x.code===c),out=[];twEnsureRules();
+  for(let t=0;t<d.n;t++)if(d.teamMin[t]){const gs=g.map((x,i)=>x.code[0]===twL(t)?i:-1).filter(i=>i>=0);if(gs.length)out.push({type:'min',g:gs,n:1,must:true});}
+  const nb=twNewbies().map(idx).filter(i=>i>=0);if(d.noNewbieOnly&&nb.length)out.push({type:'notOnly',g:nb,must:true});
+  if(d.newbieWithVet)for(let t=0;t<d.n;t++){const c=twSubs(t).length;if(c>=2){const a=idx(twL(t)+c),b=idx(twL(t)+'1');if(a>=0&&b>=0)out.push({type:'with',g:[a],p:[b],must:false});}}
+  return out;}
+document.addEventListener('change',e=>{const r=e.target.closest('[data-twr]');if(!r||!state.tw)return;const k=r.dataset.twr,d=state.tw;
+  if(k.startsWith('min.'))d.teamMin[+k.split('.')[1]]=r.checked;else if(k==='nb')d.noNewbieOnly=r.checked;else if(k==='wv')d.newbieWithVet=r.checked;twSave();});
+function twRender(){const d=state.tw;const last=7;
   const next=d.step===5?(d.t<d.n-1?'次のチームへ':'次へ'):d.step===last?'この内容で決める':'次へ';
   $('#modal-root').innerHTML=`<div class="modal" id="twModal"><div class="modal-in"><div class="modal-bar"><b>チーム区分を作る</b><button class="btn sm" data-tw="close" style="margin-left:auto">あとで</button></div>
     <div class="tw">${twPage()}<div class="dots">${Array.from({length:last+1},(_,i)=>`<i class="${i===d.step?'on':''}"></i>`).join('')}</div>
@@ -917,18 +933,20 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-tw],[data-
   if(a==='close'){twSave();$('#modal-root').innerHTML='';state.tw=null;return;}
   if(a==='minus'&&d.n>1)d.n--;if(a==='plus'&&d.n<6)d.n++;
   if(a==='addsub'){d.subs[d.t].push('');}
-  if(a==='back'){if(d.step===5&&d.t>0)d.t--;else if(d.step===6){d.step=5;d.t=d.n-1;}else d.step=Math.max(0,d.step-1);}
-  if(a==='next'){if(d.step===4){d.t=0;d.step=5;}else if(d.step===5){if(d.t<d.n-1)d.t++;else d.step=6;}
-    else if(d.step===6){twApply(Array.from({length:d.n},(_,i)=>twName(i)),twBuilt());try{sessionStorage.removeItem('sn-teamdraft');}catch(e){}
+  if(a==='back'){if(d.step===5&&d.t>0)d.t--;else if(d.step===6){d.step=5;d.t=d.n-1;}else if(d.step===7)d.step=6;else d.step=Math.max(0,d.step-1);}
+  if(a==='next'){if(d.step===4){d.t=0;d.step=5;}else if(d.step===5){if(d.t<d.n-1)d.t++;else{twEnsureRules();d.step=6;}}
+    else if(d.step===6){d.step=7;}
+    else if(d.step===7){const g=twBuilt();twApply(Array.from({length:d.n},(_,i)=>twName(i)),g,twRules(g));try{sessionStorage.removeItem('sn-teamdraft');}catch(e){}
       $('#modal-root').innerHTML='';state.tw=null;changed();renderSetup();toast('チーム区分を作りました');return;}
     else d.step++;}
   twRender();});
-function twApply(names,ng){const old=state.groups;
+function twApply(names,ng,rules){const old=state.groups,first=!(state.extra||{}).teamsDone;
   const exact=gi=>{if(gi<0||gi>=old.length)return -1;return ng.findIndex(g=>g.code===old[gi].code);};
   const loose=gi=>{const j=exact(gi);if(j>=0)return j;const L=(old[gi]||{code:''}).code[0];const k=ng.findIndex(g=>g.code[0]===L);return k>=0?k:0;};
   state.staff.forEach(st=>{st.gi=loose(st.gi);});(state.pending||[]).forEach(p=>{if(p.gi!=null)p.gi=loose(p.gi);});
   state.combo=state.combo.map(r=>{const g=[...new Set(r.g.map(exact).filter(x=>x>=0))].sort((a,b)=>a-b);const o=Object.assign({},r,{g});if(r.p)o.p=[...new Set(r.p.map(exact).filter(x=>x>=0))].sort((a,b)=>a-b);return o;})
     .filter(r=>r.g.length&&!(r.type==='with'&&!(r.p||[]).length));
+  rules=rules||[];if(first)state.combo=rules;else rules.forEach(r=>{if(!state.combo.some(c=>c.type===r.type&&c.g.join()===r.g.join()&&(c.p||[]).join()===(r.p||[]).join()))state.combo.push(r);});
   state.groups=ng;const x=twExtra();x.teams=names;x.teamsDone=true;}
 function renderSetup(){
   const r=state.req[state.mode],days=getDays(),bo=baseOff();
