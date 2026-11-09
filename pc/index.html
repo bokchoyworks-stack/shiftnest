@@ -563,7 +563,7 @@ function loadLocal(){}
 
 /* ---------- 月・スタッフ ---------- */
 function ymParts(ym){const [y,m]=(ym||state.ym).split('-').map(Number);return {y,m:m-1};}
-function holOpt(){const x=state.extra||{};return {sat:x.holSat!==false,sun:x.holSun!==false,pub:x.holPub!==false,dows:(x.holDows||[]).filter(d=>d>=1&&d<=5)};}
+function holOpt(){const x=state.extra||{};return {sat:x.holSat!==false,sun:x.holSun!==false,pub:x.holPub!==false,dows:(x.holDows||[]).filter(d=>d>=1&&d<=5),yeFrom:x.yeFrom||29,yeTo:x.yeTo==null?3:x.yeTo};}
 function holLabel(){const o=holOpt(),t=o.dows.slice().sort().map(d=>'月火水木金'[d-1]).join('')+(o.sat?'土':'')+(o.sun?'日':'')+(o.pub?'祝':'');return t||'休日';}
 function getDays(ym){const {y,m}=ymParts(ym);return monthDays(y,m,state.yearEnd,holOpt());}
 function baseOff(){return getDays().filter(d=>d.hol).length;}
@@ -970,7 +970,8 @@ function renderSetup(){
     <div class="row" style="align-items:flex-start"><span class="grow"><b>休みの日（休日の人数にする日）</b>${(state.extra||{}).holDecided?'':' <span class="chip" style="color:var(--warn)">まだ決めていません</span>'}<br><span class="note">例：病棟なら土日祝。土曜も外来・営業があるなら日祝。曜日に関係なく同じ人数なら全部オフ。</span></span>
       </div>
     <div class="row" style="gap:6px;align-items:center"><span class="note">休日にする曜日（押すたびに入る／外れる）：</span>${[1,2,3,4,5,6,0,7].map(d=>{const o=holOpt(),on=d===0?o.sun:d===6?o.sat:d===7?o.pub:o.dows.includes(d);return `<button class="btn ${on?'primary':''}" data-holdow="${d}" aria-pressed="${on}" style="min-width:44px;padding:6px 10px">${'日月火水木金土祝'[d]}</button>`;}).join('')}</div>
-    <div class="row"><span class="grow">年末年始（12/29〜1/3）を休日の人数にする</span>${sw('yearEnd',state.yearEnd,'年末年始を休日扱い')}</div>
+    <div class="row"><span class="grow">年末年始を休日の人数にする（12/${holOpt().yeFrom}〜${holOpt().yeTo?'1/'+holOpt().yeTo:'12/31'}）</span>${sw('yearEnd',state.yearEnd,'年末年始を休日扱い')}</div>
+    ${state.yearEnd?`<div class="row" style="gap:8px;align-items:center"><span class="note">範囲：</span>12月<select id="yeFrom">${[24,25,26,27,28,29,30,31].map(d=>`<option value="${d}" ${holOpt().yeFrom===d?'selected':''}>${d}日</option>`).join('')}</select>から　<select id="yeTo">${[0,1,2,3,4,5,6,7].map(d=>`<option value="${d}" ${holOpt().yeTo===d?'selected':''}>${d?'1月'+d+'日':'12月31日'}</option>`).join('')}</select>まで</div>`:''}
     <div class="row" style="gap:8px">${hols.length?hols.map(h=>`<span class="chip" style="color:var(--sun)">${ymParts().m+1}/${h.day} ${esc(h.name)}</span>`).join(''):''}<span class="note">祝日は自動で入ります。休日（${holLabel()}） ${bo} 日 ＝ 週休の基本日数</span></div>
   </div>
 
@@ -1193,6 +1194,7 @@ $('#p-setup').addEventListener('click',e=>{
 });
 $('#p-setup').addEventListener('change',e=>{
   const t=e.target;
+  if(t.id==='yeFrom'||t.id==='yeTo'){const x=state.extra||(state.extra={});x[t.id]=+t.value;changed();renderSetup();return;}
   if(t.id==='ymSel'){state.ym=t.value;state.accepted=[];changed();renderSetup();return;}
   if(t.id==='impFile'&&t.files&&t.files[0]){const fr=new FileReader();fr.onload=()=>{state.imp.img=fr.result;renderSetup();};fr.readAsDataURL(t.files[0]);return;}
   if(t.id==='ic1'){state.imp.c1=t.checked;renderSetup();return;}
