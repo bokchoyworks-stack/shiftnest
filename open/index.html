@@ -22,7 +22,9 @@ if(a){ /* スタッフの希望（回答）：管理者のiPhoneのアプリで�
   document.title='ShiftNest で受け取る';
   $('msg').innerHTML='スタッフから届いた<b>勤務の希望</b>です。管理者のiPhoneのShiftNestで受け取ってください。';
   const url='shiftnest://a?d='+encodeURIComponent(a);$('go').href=url;$('go').textContent='ShiftNest アプリで受け取る';
-  document.querySelector('.note').textContent='アプリが開かないときは、このページの文字をコピーして、アプリの「届いた申請・希望を取り込む」に貼り付けてください。中身は暗号で、管理者のアプリでしか開けません。このページはデータを保存しません。';
+  document.querySelector('.note').insertAdjacentHTML('beforebegin','<a class="btn" id="cp" href="#" style="background:transparent;color:var(--accent);border:2px solid var(--accent)">うまく開かないとき：コピーしてアプリを開く</a>');
+  $('cp').onclick=async e=>{e.preventDefault();try{await navigator.clipboard.writeText(a);}catch(_){ }location.href='shiftnest://paste';};
+  document.querySelector('.note').textContent='アプリが開くと、そのまま「承認」の画面になります。中身は暗号で、管理者のアプリでしか開けません。このページはデータを保存しません。';
   setTimeout(()=>{location.href=url;},300);
 }else if(!h){$('msg').textContent='リンクが途中で切れているようです。もう一度送ってもらってください。';$('go').style.display='none';}
 else{const url='shiftnest://import?d='+h;$('go').href=url;}
