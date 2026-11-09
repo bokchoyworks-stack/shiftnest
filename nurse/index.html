@@ -324,8 +324,9 @@ function renderSend(head,title,foot,onBack){
       ${S.lastMail?`<p class="note" style="text-align:center;color:var(--ok)">${esc(S.lastMail)} にメールを開きました</p>`:''}`:''}
     ${S.inv.ln?`<div class="box info" style="margin-top:8px"><b>職場の提出用LINEグループ</b>に送ってもかまいません（下の「送る」→ LINE）。</div>`:''}
     <p class="note" style="margin:10px 0">${S.inv.to?'ほかの渡し方：':'次のどれかで管理者に渡してください。'}中身は暗号化されていて、管理者のアプリでしか開けません。</p>
-    <div class="box info"><b>A. 管理者に画面を見せる</b>（いちばん確実）<br>管理者がアプリでこのQRコードを読み取ります。</div>
+    <div class="box info"><b>A. QRコードを管理者に渡す</b>（いちばん確実）<br>管理者がアプリの「スタッフのQRコードを読み取る」で読み取ります。その場で画面を見せるか、画像にして送ってください。</div>
     <div class="qr" style="margin:10px 0">${qrSvg(tok)}</div>
+    <button class="btn block" id="qrImg">QRコードを画像で送る・保存する</button>
     <div class="box info"><b>B. メール・メッセージで送る</b></div>
     <div class="row" style="margin:8px 0 12px"><button class="btn" id="share">送る（メール・LINEなど）</button><button class="btn" id="copy">コピー</button></div>
     <code class="tok" id="tok">${esc(tok)}</code>
@@ -334,7 +335,7 @@ function renderSend(head,title,foot,onBack){
     ${onBack?'<button class="btn block" id="again">直す</button>':''}</div>`;
   const web=new URL('../open/',location.href).href.split('#')[0]+'#a='+tok;
   const mm0=+String(S.inv.ym||'').split('-')[1]||'';
-  const text=(S.name?S.name+'さんの':'')+mm0+'月の勤務希望です（ShiftNest）。\n\n▼ 管理者の方へ：iPhoneでこのリンクを押すと、アプリに取り込まれます\n'+web+'\n\n※ リンクの長い文字は暗号です。中身は管理者のアプリでしか読めません。';
+  const text=(S.name?S.name+'さんの':'')+mm0+'月の勤務希望です（ShiftNest）。\n\n▼ 管理者の方へ：iPhoneでこのリンクを押すと、アプリに取り込まれます\n'+web+'\n\n※ リンクの長い文字は暗号です。中身は管理者のアプリでしか読めません。\n※ リンクで開けないときは、アプリの「スタッフのQRコードを読み取る」で、QRコードの画像（添付）を読み取ってください。';
   const mm=+String(S.inv.ym||'').split('-')[1]||'',subj=mm+'月の勤務希望（ShiftNest）'+(S.name||'');
   $('#share').onclick=async()=>{if(navigator.share){try{await navigator.share({title:subj,text});}catch(e){}}else{location.href='mailto:?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(text);}};
   const mt=$('#mailTo');if(mt)mt.onclick=()=>{const last=store.get('sn-mail-'+S.inv.ym);
@@ -342,8 +343,18 @@ function renderSend(head,title,foot,onBack){
     const now=stampNow();store.set('sn-mail-'+S.inv.ym,now);S.lastMail=now;
     location.href='mailto:'+encodeURIComponent(S.inv.to).replace('%40','@')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(text);};
   $('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(text);toast('コピーしました');}catch(e){const r=document.createRange();r.selectNodeContents($('#tok'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('選択しました。コピーしてください');}};
+  $('#qrImg').onclick=async()=>{try{const f=await qrFile(tok,subj);
+    if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:subj,text:subj});}catch(e){}return;}
+    const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;document.body.appendChild(a);a.click();a.remove();toast('画像を保存しました。メールやLINEに添付して送ってください');}catch(e){toast('画像を作れませんでした：'+e.message);}};
   if(onBack)$('#again').onclick=onBack;
 }
+/* QRコードをPNG画像にする（名前つき） */
+function qrFile(text,title){return new Promise((ok,ng)=>{const q=qrcode(0,'L');q.addData(text);q.make();
+  const n=q.getModuleCount(),cs=Math.max(4,Math.ceil(720/n)),m=4*cs,W=n*cs+m*2,H=W+64,c=document.createElement('canvas');c.width=W;c.height=H;
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);g.fillStyle='#000';
+  for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))g.fillRect(m+k*cs,m+r*cs,cs,cs);
+  g.fillStyle='#14262A';g.font='bold 30px -apple-system,"Hiragino Sans",sans-serif';g.textAlign='center';g.fillText(title,W/2,W+40);
+  c.toBlob(b=>b?ok(new File([b],'shiftnest-qr.png',{type:'image/png'})):ng(new Error('画像')),'image/png');});}
 
 /* ---------- お願いリンク ---------- */
 function renderReq(){
