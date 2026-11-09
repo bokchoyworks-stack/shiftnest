@@ -968,8 +968,8 @@ function renderSetup(){
     <div class="row"><span class="grow"><b>作る月</b></span><select id="ymSel">${monthsList().map(([v,t])=>`<option value="${v}" ${v===state.ym?'selected':''}>${t}</option>`).join('')}</select></div>
     <div class="row"><span class="grow"><b>前月からの引き継ぎ</b><br><span class="note">${state.history[pv]?monthLabel(pv)+'の保存済み勤務表から自動で読み込みます':monthLabel(pv)+'は未保存のため、サンプルの前月データを使います'}</span></span><span class="chip" style="color:${state.history[pv]?'var(--ok)':'var(--muted)'}">${state.history[pv]?'✓ 引き継ぎOK':'サンプル'}</span></div>
     <div class="row" style="align-items:flex-start"><span class="grow"><b>休みの日（休日の人数にする日）</b>${(state.extra||{}).holDecided?'':' <span class="chip" style="color:var(--warn)">まだ決めていません</span>'}<br><span class="note">例：病棟なら土日祝。土曜も外来・営業があるなら日祝。曜日に関係なく同じ人数なら全部オフ。</span></span>
-      <span class="row" style="gap:6px;margin:0">${[['holSat','土曜'],['holSun','日曜'],['holPub','祝日']].map(([k,t])=>`<span class="toggle-lbl ${holOpt()[k==='holSat'?'sat':k==='holSun'?'sun':'pub']?'on':''}">${t}</span>${sw(k,holOpt()[k==='holSat'?'sat':k==='holSun'?'sun':'pub'],t+'を休日の人数にする')}`).join('')}</span></div>
-    <div class="row" style="gap:6px;align-items:center"><span class="note">平日で休みの曜日（定休日など）：</span>${[1,2,3,4,5].map(d=>{const on=holOpt().dows.includes(d);return `<button class="btn ${on?'primary':''}" data-holdow="${d}" aria-pressed="${on}" style="min-width:44px;padding:6px 10px">${'月火水木金'[d-1]}</button>`;}).join('')}</div>
+      </div>
+    <div class="row" style="gap:6px;align-items:center"><span class="note">休日にする曜日（押すたびに入る／外れる）：</span>${[1,2,3,4,5,6,0,7].map(d=>{const o=holOpt(),on=d===0?o.sun:d===6?o.sat:d===7?o.pub:o.dows.includes(d);return `<button class="btn ${on?'primary':''}" data-holdow="${d}" aria-pressed="${on}" style="min-width:44px;padding:6px 10px">${'日月火水木金土祝'[d]}</button>`;}).join('')}</div>
     <div class="row"><span class="grow">年末年始（12/29〜1/3）を休日の人数にする</span>${sw('yearEnd',state.yearEnd,'年末年始を休日扱い')}</div>
     <div class="row" style="gap:8px">${hols.length?hols.map(h=>`<span class="chip" style="color:var(--sun)">${ymParts().m+1}/${h.day} ${esc(h.name)}</span>`).join(''):''}<span class="note">祝日は自動で入ります。休日（${holLabel()}） ${bo} 日 ＝ 週休の基本日数</span></div>
   </div>
@@ -1105,7 +1105,7 @@ $('#p-setup').addEventListener('click',e=>{
     changed();renderSetup();return;
   }
   const hw=t.closest('[data-holdow]');
-  if(hw){const x=state.extra||(state.extra={}),d=+hw.dataset.holdow,l=(x.holDows||[]).filter(v=>v!==d);if(l.length===(x.holDows||[]).length)l.push(d);x.holDows=l.sort();x.holDecided=true;changed();renderSetup();return;}
+  if(hw){const x=state.extra||(state.extra={}),d=+hw.dataset.holdow;if(d===0||d===6||d===7){const k=d===0?'holSun':d===6?'holSat':'holPub';x[k]=x[k]===false;}else{const l=(x.holDows||[]).filter(v=>v!==d);if(l.length===(x.holDows||[]).length)l.push(d);x.holDows=l.sort();}x.holDecided=true;changed();renderSetup();return;}
   const s=t.closest('[data-sw]');
   if(s){const k=s.dataset.sw;
     if(k==='mode2'){state.mode=state.mode==='3'?'2':'3';state.accepted=[];}
