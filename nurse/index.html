@@ -172,7 +172,7 @@ function bindPrint(){document.querySelectorAll('[data-print]').forEach(b=>b.oncl
 /* ---------- 招待：希望入力 ---------- */
 function setupInvite(){
   const inv=S.inv,[y,m]=inv.ym.split('-').map(Number);
-  S.days=monthDays(y,m-1,!!inv.ye);
+  S.days=monthDays(y,m-1,!!inv.ye,{yeFrom:inv.yf||29,yeTo:inv.yt==null?3:inv.yt});
   const draft=store.get(draftKey())||{};
   S.step=draft.step&&draft.step!=='done'?draft.step:'who';
   S.id=draft.id||0;S.name=draft.name||'';S.p=draft.p||new Array(S.days.length).fill(0);
