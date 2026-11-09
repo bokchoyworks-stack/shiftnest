@@ -30,7 +30,7 @@
     const o=Object.assign({sat:true,sun:true,pub:true},opt||{});
     const n=new Date(y,m+1,0).getDate(),out=[];
     for(let i=1;i<=n;i++){const dow=new Date(y,m,i).getDay();let name=holidayName(y,m,i);const pubHol=!!name;
-      const ye=yearEnd&&((m===11&&i>=29)||(m===0&&i<=3));if(!name&&ye)name='年末年始';
+      const ye=yearEnd&&((m===11&&i>=(o.yeFrom||29))||(m===0&&i<=(o.yeTo==null?3:o.yeTo)));if(!name&&ye)name='年末年始';
       out.push({day:i,dow,name,hol:(dow===6&&o.sat)||(dow===0&&o.sun)||(o.dows||[]).includes(dow)||(pubHol&&o.pub)||ye});}
     return out;
   }
