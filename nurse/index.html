@@ -335,7 +335,7 @@ function renderSend(head,title,foot,onBack){
     ${onBack?'<button class="btn block" id="again">直す</button>':''}</div>`;
   const web=new URL('../open/',location.href).href.split('#')[0]+'#a='+tok;
   const mm0=+String(S.inv.ym||'').split('-')[1]||'';
-  const text=(S.name?S.name+'さんの':'')+mm0+'月の勤務希望です（ShiftNest）。\n\n▼ 管理者の方へ：iPhoneでこのリンクを押すと、アプリに取り込まれます\n'+web+'\n\n※ リンクの長い文字は暗号です。中身は管理者のアプリでしか読めません。\n※ リンクで開けないときは、アプリの「スタッフのQRコードを読み取る」で、QRコードの画像（添付）を読み取ってください。';
+  const text=(S.name?S.name+'さんの':'')+mm0+'月の勤務希望です（ShiftNest）。\n\n▼ 管理者の方へ：このリンクを開いてください。iPhoneならアプリが開いて承認画面に、パソコンならQRコードが出ます（iPhoneのShiftNestの「スタッフのQRコードを読み取る」で読み取り）\n'+web+'\n\n※ リンクの長い文字は暗号です。中身は管理者のアプリでしか読めません。\n※ リンクで開けないときは、アプリの「スタッフのQRコードを読み取る」で、QRコードの画像（添付）を読み取ってください。';
   const mm=+String(S.inv.ym||'').split('-')[1]||'',subj=mm+'月の勤務希望（ShiftNest）'+(S.name||'');
   $('#share').onclick=async()=>{if(navigator.share){try{await navigator.share({title:subj,text});}catch(e){}}else{location.href='mailto:?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(text);}};
   const mt=$('#mailTo');if(mt)mt.onclick=()=>{const last=store.get('sn-mail-'+S.inv.ym);
