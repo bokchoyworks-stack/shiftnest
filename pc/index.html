@@ -648,7 +648,7 @@ function buildCfg(){
     const base=kd==='day'?NB:kd==='night'?(1<<DAY):kd==='eve'?((1<<DAY)|(1<<NIG)):kd==='nig'?((1<<DAY)|(1<<EVE)):0;
     days.forEach((dd,i)=>{const k=dkey(state.ym,dd.day);let b=base;if(st.events.some(e=>e.type==='nightoff'&&k>=e.from&&k<=(e.to||e.from)))b|=NB;a[i]=b;});return a;});
   staff.forEach((x,i)=>{const kd=kindOf(inM[i].st),st0=inM[i].st;x.nMin=st0.nMin||0;x.nMax=st0.nMax??null;x.dMax=st0.dMax??null;x.kind=kd;x.dv=(kd==='all'||kd==='day')?(inM[i].st.dv||0):0;x.night=!ban[i].every(b=>(b&NB)===NB);});
-  return {cfg:{ban,mode:state.mode,days,staff,prefs,ng,prev:prevFor(inM),req:state.req[state.mode],rules:state.rules,groups:state.groups,combo:state.combo,fixed:inM.map(x=>x.f),minus:pcShortfalls().map(x=>[x.day-1,x.code])},ids};
+  return {cfg:{ban,mode:state.mode,days,staff,prefs,ng,prev:prevFor(inM),req:state.req[state.mode],rules:state.rules,groups:state.groups,combo:state.combo,fixed:inM.map(x=>x.f),minus:pcShortfalls().map(x=>[x.day-1,x.code]),dayReq:((state.extra||{}).dayReq||{})[state.ym]||{}},ids};
 }
 function changed(){pcKeepDraft('設定を変える前');state.result=null;saveLocal();}
 function invalidate(){if(state.result)state.stale=true;}
@@ -778,7 +778,7 @@ function compileRules(rules,G){const mask=a=>{const b=new Uint8Array(G);(a||[]).
   return rules.filter(r=>r.g&&r.g.length&&(r.type!=='with'||(r.p&&r.p.length))).map(r=>({...r,gm:mask(r.g),pm:mask(r.p)}));}
 function nightSizes(){const r=state.req[state.mode],ks=new Set();['weekday','holiday'].forEach(w=>{(state.mode==='3'?[r[w].E,r[w].N]:[r[w].Y]).forEach(k=>{if(k>0)ks.add(k);});});return [...ks];}
 function comps(G,k){const out=[];const rec=(g,left,cnt)=>{if(g===G-1){cnt[g]=left;out.push(cnt.slice());return;}for(let c=left;c>=0;c--){cnt[g]=c;rec(g+1,left-c,cnt);}};rec(0,k,new Array(G).fill(0));return out;}
-function validSet(rules,G,k){const m={combo:compileRules(rules,G),G};return comps(G,k).map(c=>comboEval(m,c,k,null)===0);}
+function validSet(rules,G,k){const m={combo:compileRules(rules.filter(r=>!(r.s&&r.s.length)&&!r.dt),G),G};return comps(G,k).map(c=>comboEval(m,c,k,null)===0);}
 function sameAs(rules,ref,G,ks){return ks.every((k,i)=>{const v=validSet(rules,G,k);return v.every((x,j)=>x===ref[i][j]);});}
 function summarizeRules(){
   const G=state.groups.length,ks=nightSizes(),must=state.combo.filter(r=>r.must&&r.g&&r.g.length&&(r.type!=='with'||(r.p&&r.p.length)));
