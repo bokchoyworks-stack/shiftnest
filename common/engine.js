@@ -21,6 +21,10 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 const W={hard:10000,ng:6000,x:1000,overN:600,short:400,consec:60,nrun:35,p2:25,p1:6,fairN:5,fairW:3,soft:40,star:800,want:30,must:900};
 /* 勤務の希望 なるべく：5日勤 6夜勤（3交代は準夜か深夜） 7準夜 8深夜 ／ 必ず：9日勤 10夜勤 11準夜 12深夜 */
 function wantOK(m,q,s){if(q>=9)q-=4;return q===5?s===DAY:q===6?(m.mode==='2'?s===YAK:(s===EVE||s===NIG)):q===7?s===EVE:q===8?s===NIG:true;}
+/* 日ごとの人数：cfg.dayReq={日: {D,E,N,Y,F,L}} */
+function dayReqOf(cfg,dd){const o=cfg.dayReq&&cfg.dayReq[dd.day];if(!o)return null;return {D:o.D||0,E:o.E||0,N:o.N||0,Y:o.Y||0,F:o.F||0,L:o.L||0};}
+/* ルールがその勤務・その日に当てはまるか（s なし＝夜勤、dt：'wd' 平日だけ / 'hol' 休日だけ） */
+function ruleOn(r,c,hol){return !!r.sm[c]&&(!r.dt||(r.dt==='hol'?hol:!hol));}
 function buildModel(cfg){
   const {mode,days,staff,prefs,ng,prev,req,rules}=cfg;
   const S=staff.length,D=days.length;
@@ -29,7 +33,7 @@ function buildModel(cfg){
   const isNight=new Uint8Array(6);nightCodes.forEach(c=>isNight[c]=1);
   const need=[];let err=null;
   for(let d=0;d<D;d++){
-    const r=days[d].hol?req.holiday:req.weekday,o=new Int16Array(8);
+    const r=dayReqOf(cfg,days[d])||(days[d].hol?req.holiday:req.weekday),o=new Int16Array(8); /* 日ごとの人数（その日だけ変える）があれば優先 */
     for(let n=0;n<S;n++){const f=cfg.fixed[n][d];if(f)o[f]++;}
     if(mode==='3'){o[DAY]=r.D;o[EVE]=r.E;o[NIG]=r.N;}
     else{o[DAY]=r.D;o[YAK]=r.Y;o[AKE]=d===0?prev.reduce((a,p)=>a+(p[1]===YAK?1:0),0):need[d-1][YAK];}
@@ -42,7 +46,9 @@ function buildModel(cfg){
   }
   const gi=Int8Array.from(staff.map(s=>s.gi)),G=cfg.groups.length,nightOK=staff.map(s=>!!s.night),target=staff.map(s=>s.off);
   const mask=a=>{const b=new Uint8Array(G);(a||[]).forEach(i=>{if(i<G)b[i]=1;});return b;};
-  const combo=(cfg.combo||[]).filter(r=>r.g&&r.g.length&&(r.type!=='with'||(r.p&&r.p.length))).map(r=>({...r,gm:mask(r.g),pm:mask(r.p)}));
+  const combo=(cfg.combo||[]).filter(r=>r.g&&r.g.length&&(r.type!=='with'||(r.p&&r.p.length))).map(r=>{const sm=new Uint8Array(8);if(r.s&&r.s.length)r.s.forEach(c=>{if(c>0&&c<6)sm[c]=1;});else nightCodes.forEach(c=>sm[c]=1);return {...r,gm:mask(r.g),pm:mask(r.p),sm};});
+  /* 組み合わせを見る勤務：夜勤＋ルールで指定した勤務（日勤など） */
+  const evalCodes=(mode==='3'?[DAY,EVE,NIG]:[DAY,YAK]).filter(c=>isNight[c]||combo.some(r=>r.sm[c]));
   const maxN=mode==='3'?rules.maxNights3:rules.maxNights2;
   let nightSlots=0,holWork=0,demand=0;
   for(let d=0;d<D;d++){for(const c of nightCodes)nightSlots+=need[d][c];const w=S-need[d][OFF]-need[d][6]-need[d][7];demand+=w;if(days[d].hol)holWork+=w;}
@@ -58,12 +64,12 @@ function buildModel(cfg){
   const expN=nightOK.map((ok,i)=>!ok?0:nightOnly[i]?maxNs[i]:Math.max(0,nightSlots-noNights)/nReg);
   const nightBits=nightCodes.reduce((a,c)=>a|(1<<c),0);
   const dv=staff.map(st=>st.dv||0),canL=dv.map(v=>v===0||v===1?1:0),canE=dv.map(v=>v===0||v===2?1:0);
-  const lateNeed=days.map(dd=>(dd.hol?req.holiday:req.weekday).L||0),earlyNeed=days.map(dd=>(dd.hol?req.holiday:req.weekday).F||0);
+  const lateNeed=days.map(dd=>(dayReqOf(cfg,dd)||(dd.hol?req.holiday:req.weekday)).L||0),earlyNeed=days.map(dd=>(dayReqOf(cfg,dd)||(dd.hol?req.holiday:req.weekday)).F||0);
   const ban=cfg.ban||staff.map(st=>new Uint8Array(D).fill(st.night?0:nightBits));
   const expW=workCap.map(c=>holWork*c/capSum);
   const NG=Array.from({length:S},()=>new Uint8Array(S));
   for(const [a,b] of ng){NG[a][b]=1;NG[b][a]=1;}
-  return {minNs,maxDs,nightRunMax,mode,days,S,D,allowed,nightCodes,isNight,need,gi,G,combo,groups:cfg.groups,fixed,ban,nightBits,nightOnly,maxNs,dv,canL,canE,lateNeed,earlyNeed,nightOK,target,maxN,expN,expW,NG,prefs,prev,rules,err,demand,supply:capSum,nightSlots,nNight,nightHours:mode==='3'?8:16};
+  return {minNs,maxDs,nightRunMax,mode,days,S,D,allowed,nightCodes,isNight,need,gi,G,combo,evalCodes,groups:cfg.groups,fixed,ban,nightBits,nightOnly,maxNs,dv,canL,canE,lateNeed,earlyNeed,nightOK,target,maxN,expN,expW,NG,prefs,prev,rules,err,demand,supply:capSum,nightSlots,nNight,nightHours:mode==='3'?8:16};
 }
 function rowPen(m,X,n){
   const row=X[n],P=m.prefs[n],A=m.allowed,D=m.D,pv=m.prev[n];
@@ -98,19 +104,21 @@ function rowPen(m,X,n){
 }
 function gl(ids,groups){return (ids||[]).map(i=>groups[i]?groups[i].code:'?').join('・');}
 function ruleText(r,groups){
-  if(r.type==='min')return '夜勤に '+gl(r.g,groups)+' を最低'+r.n+'人';
-  if(r.type==='notOnly')return gl(r.g,groups)+' だけの夜勤はつくらない';
-  return gl(r.g,groups)+' の夜勤には '+gl(r.p,groups)+' も一緒';
+  const sh=r.s&&r.s.length?r.s.map(c=>LONG[c]).join('・'):'夜勤',dp=r.dt==='hol'?'休日の':r.dt==='wd'?'平日の':'';
+  if(r.type==='min')return dp+sh+'に '+gl(r.g,groups)+' を最低'+r.n+'人';
+  if(r.type==='notOnly')return dp+gl(r.g,groups)+' だけの'+sh+'はつくらない';
+  return dp+gl(r.g,groups)+' の'+sh+'には '+gl(r.p,groups)+' も一緒';
 }
 const _mem=[],_cnt=new Int16Array(32);
-function comboEval(m,cnt,total,stat){
+function comboEval(m,cnt,total,stat,code,hol){
   let p=0;
   for(const r of m.combo){
+    if(code!==undefined&&!ruleOn(r,code,hol)){if(stat){const st=stat.get(r);if(st)st.lastBad=false;}continue;}
     let s=0,sp=0,both=0;
     for(let g=0;g<m.G;g++){if(r.gm[g]){s+=cnt[g];if(r.pm[g])both+=cnt[g];}if(r.pm[g])sp+=cnt[g];}
     let bad=0,app=1;
     if(r.type==='min'){if(s<r.n)bad=r.n-s;}
-    else if(r.type==='notOnly'){if(s===total)bad=1;}
+    else if(r.type==='notOnly'){if(total>0&&s===total)bad=1;}
     else{if(s===0)app=0;else if(sp-(s===1&&both===1?1:0)<1)bad=1;}
     p+=(r.must?W.hard:W.soft)*bad;
     if(stat){let st=stat.get(r);if(!st){st={ok:0,app:0};stat.set(r,st);}if(app){st.app++;if(!bad)st.ok++;}st.lastBad=!!bad;}
@@ -119,11 +127,12 @@ function comboEval(m,cnt,total,stat){
 }
 function colPen(m,X,d){
   let p=0;const S=m.S,G=m.G,cnt=_cnt;
-  for(const c of m.nightCodes){
+  const hol=m.days[d].hol;
+  for(const c of m.evalCodes){
     _mem.length=0;for(let g=0;g<G;g++)cnt[g]=0;
     for(let n=0;n<S;n++)if(X[n][d]===c){_mem.push(n);cnt[m.gi[n]]++;}
-    if(_mem.length)p+=comboEval(m,cnt,_mem.length,null);
-    for(let i=0;i<_mem.length;i++)for(let j=i+1;j<_mem.length;j++)if(m.NG[_mem[i]][_mem[j]])p+=W.ng;
+    if(_mem.length||c===DAY)p+=comboEval(m,cnt,_mem.length,null,c,hol);
+    if(m.isNight[c])for(let i=0;i<_mem.length;i++)for(let j=i+1;j<_mem.length;j++)if(m.NG[_mem[i]][_mem[j]])p+=W.ng;
   }
   const L=m.lateNeed[d],E=m.earlyNeed[d];
   if(L||E){let cl=0,ce=0,cb=0;for(let n=0;n<S;n++)if(X[n][d]===DAY&&m.dv[n]!==3){const a=m.canL[n],b=m.canE[n];if(a)cl++;if(b)ce++;if(a&&b)cb++;}
@@ -165,7 +174,7 @@ function initial(m,rnd){
       const sc={};for(const n of cands)sc[n]=(nights[n]-m.expN[n]*(d+1)/D)*10+(m.prefs[n][d]===4?60:m.prefs[n][d]===2?30:m.prefs[n][d]===1?6:0)+(m.prefs[n][d]>=5?(wantOK(m,m.prefs[n][d],c)?(m.prefs[n][d]>=9?-200:-40):(m.prefs[n][d]>=9?100:20)):0)+(prevOf(n)===c?8:0)+rnd()*4;
       cands.sort((a,b)=>sc[a]-sc[b]);
       const picked=[];
-      for(const r of m.combo){if(r.type!=='min'||!r.must)continue;let need=r.n-picked.filter(n=>r.gm[m.gi[n]]).length;while(need>0&&picked.length<k){const i=cands.findIndex(n=>r.gm[m.gi[n]]&&!picked.some(q=>m.NG[q][n]));if(i<0)break;picked.push(cands[i]);cands.splice(i,1);need--;}}
+      for(const r of m.combo){if(r.type!=='min'||!r.must||!ruleOn(r,c,m.days[d].hol))continue;let need=r.n-picked.filter(n=>r.gm[m.gi[n]]).length;while(need>0&&picked.length<k){const i=cands.findIndex(n=>r.gm[m.gi[n]]&&!picked.some(q=>m.NG[q][n]));if(i<0)break;picked.push(cands[i]);cands.splice(i,1);need--;}}
       for(const n of cands){if(picked.length>=k)break;if(picked.some(q=>m.NG[q][n]))continue;picked.push(n);}
       for(let n=0;n<S&&picked.length<k;n++)if(free[n]&&!(m.ban[n][d]&(1<<c))&&!picked.includes(n))picked.push(n);
       for(let n=0;n<S&&picked.length<k;n++)if(free[n]&&!picked.includes(n))picked.push(n);
@@ -176,7 +185,10 @@ function initial(m,rnd){
       const cands=[];for(let n=0;n<S;n++)if(free[n]&&!(m.ban[n][d]&2)&&m.prefs[n][d]!==3&&m.allowed[prevOf(n)][DAY])cands.push(n);
       const sc={};for(const n of cands)sc[n]=-((D-m.target[n])-works[n])/rem*10+(m.prefs[n][d]===4?9:m.prefs[n][d]===2?4:m.prefs[n][d]===1?1:0)+(m.prefs[n][d]===5?-9:m.prefs[n][d]===9?-100:m.prefs[n][d]>=10?50:m.prefs[n][d]>=6?6:0)+rnd()*.5;
       cands.sort((a,b)=>sc[a]-sc[b]);
-      const picked=cands.slice(0,k);
+      const picked=[];
+      /* チームの最低人数（日勤）を先に入れる */
+      for(const r of m.combo){if(r.type!=='min'||!r.must||!ruleOn(r,DAY,m.days[d].hol))continue;let need=r.n-picked.filter(n=>r.gm[m.gi[n]]).length;while(need>0&&picked.length<k){const i=cands.findIndex(n=>r.gm[m.gi[n]]&&!picked.includes(n));if(i<0)break;picked.push(cands[i]);cands.splice(i,1);need--;}}
+      for(const n of cands){if(picked.length>=k)break;if(!picked.includes(n))picked.push(n);}
       for(let n=0;n<S&&picked.length<k;n++)if(free[n]&&!(m.ban[n][d]&2)&&!picked.includes(n))picked.push(n);
       for(let n=0;n<S&&picked.length<k;n++)if(free[n]&&!picked.includes(n))picked.push(n);
       for(const n of picked){X[n][d]=DAY;free[n]=0;works[n]++;}
@@ -221,13 +233,13 @@ function verify(m,X){
   for(let d=0;d<D;d++){
     const cnt=new Int16Array(8);for(let n=0;n<S;n++)cnt[X[n][d]]++;
     for(let c=0;c<8;c++)if(cnt[c]!==m.need[d][c])hard.push({type:'人数',d,msg:(d+1)+'日の'+LONG[c]+'が'+cnt[c]+'人（必要'+m.need[d][c]+'人）'});
-    for(const c of m.nightCodes){
+    for(const c of m.evalCodes){
       const mem=[];for(let n=0;n<S;n++)if(X[n][d]===c)mem.push(n);
-      if(!mem.length)continue;
+      if(!mem.length&&c!==DAY)continue;
       const cnt=new Int16Array(m.G);mem.forEach(n=>cnt[m.gi[n]]++);
-      comboEval(m,cnt,mem.length,stat);
-      for(const r of m.combo)if(r.must&&stat.get(r).lastBad)hard.push({type:'組み合わせ',d,msg:(d+1)+'日の'+LONG[c]+'：「'+ruleText(r,m.groups)+'」を守れていません'});
-      for(let i=0;i<mem.length;i++)for(let j=i+1;j<mem.length;j++)if(m.NG[mem[i]][mem[j]])ngv.push({d,a:mem[i],b:mem[j]});
+      comboEval(m,cnt,mem.length,stat,c,m.days[d].hol);
+      for(const r of m.combo)if(r.must&&ruleOn(r,c,m.days[d].hol)&&stat.get(r)&&stat.get(r).lastBad)hard.push({type:'組み合わせ',d,msg:(d+1)+'日の'+LONG[c]+'：「'+ruleText(r,m.groups)+'」を守れていません'});
+      if(m.isNight[c])for(let i=0;i<mem.length;i++)for(let j=i+1;j<mem.length;j++)if(m.NG[mem[i]][mem[j]])ngv.push({d,a:mem[i],b:mem[j]});
     }
   }
   for(let n=0;n<S;n++){
@@ -258,7 +270,7 @@ function verify(m,X){
 }
 function analyzeX(m,xv){
   const days=[...new Set(xv.map(v=>v.d))].sort((a,b)=>a-b);
-  const mr=m.combo.find(r=>r.type==='min'&&r.must);
+  const mr=m.combo.find(r=>r.type==='min'&&r.must&&!(r.s&&r.s.length)&&!r.dt);
   return days.map(d=>{
     const nShifts=(m.nightCodes.filter(c=>m.need[d][c]>0).length+(m.mode==='2'&&d>0?1:0))*(mr?mr.n:1);
     const canNight=n=>(m.ban[n][d]&m.nightBits)!==m.nightBits&&!m.fixed[n][d]&&(m.mode==='3'||d+1>=m.D||(m.prefs[n][d+1]!==3&&!m.fixed[n][d+1]));
