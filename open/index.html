@@ -15,6 +15,8 @@ a.btn{display:block;text-align:center;background:var(--accent);color:#fff;border
   <a class="btn" id="go" href="#">ShiftNest アプリで開く</a>
   <p class="note">開いたら、パソコンの画面に出ていた鍵番号（6けた）を入れます。中身は鍵付きで、番号がないと開けません。<br>このページはデータを保存しません。</p>
 </div>
+<div class="card" id="pcBox" style="display:none;margin-top:14px;text-align:center"></div>
+<script src="../vendor/qrcode.js"></script>
 <script>
 const P=new URLSearchParams(location.hash.slice(1)),h=P.get('d'),a=P.get('a');
 const $=id=>document.getElementById(id);
@@ -25,7 +27,17 @@ if(a){ /* スタッフの希望（回答）：管理者のiPhoneのアプリで�
   document.querySelector('.note').insertAdjacentHTML('beforebegin','<a class="btn" id="cp" href="#" style="background:transparent;color:var(--accent);border:2px solid var(--accent)">うまく開かないとき：コピーしてアプリを開く</a>');
   $('cp').onclick=async e=>{e.preventDefault();try{await navigator.clipboard.writeText(a);}catch(_){ }location.href='shiftnest://paste';};
   document.querySelector('.note').textContent='アプリが開くと、そのまま「承認」の画面になります。中身は暗号で、管理者のアプリでしか開けません。このページはデータを保存しません。';
-  setTimeout(()=>{location.href=url;},300);
+  const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(mobile){setTimeout(()=>{location.href=url;},300);}
+  else{ /* パソコンで開いたとき：iPhoneで読み取れるQRを大きく出す */
+    document.querySelector('.card').style.display='none';
+    let svg='';try{const q=qrcode(0,'L');q.addData(a);q.make();svg=q.createSvgTag({cellSize:6,margin:4,scalable:true});}catch(e){svg='<p>QRを作れませんでした</p>';}
+    const b=$('pcBox');b.style.display='block';b.style.maxWidth='620px';
+    b.innerHTML='<h1 style="font-size:22px;margin:0 0 6px">スタッフの勤務希望が届きました</h1>'
+      +'<p style="margin:0 0 12px">iPhoneの <b>ShiftNest</b> で<br><b>「スタッフのQRコードを読み取る」</b>を押して、このQRを映してください。<br>そのまま「承認」の画面になります。</p>'
+      +'<div style="max-width:440px;margin:0 auto;background:#fff;padding:8px;border-radius:12px">'+svg+'</div>'
+      +'<p class="note" style="margin-top:12px">中身は暗号化されていて、管理者のiPhoneのアプリでしか開けません。このページはデータを保存しません。</p>';
+  }
 }else if(!h){$('msg').textContent='リンクが途中で切れているようです。もう一度送ってもらってください。';$('go').style.display='none';}
 else{const url='shiftnest://import?d='+h;$('go').href=url;}
 </script></body></html>
